@@ -87,12 +87,12 @@ function array_get {
 function run_commands {
 	local project=$1
 	local commands=$2
-	commands_hash=$(echo "$commands" | md5)
+	commands_hash=$(echo "$commands" | openssl dgst -md5)
 
 	local build=true
 	if [[ "$remote" = true ]] && [[ -f "$build_home/$project/$commands_hash" ]]; then
 		# there's a cached build by commands hash file, check it
-		build_sha=$(echo $build_home/$project/$commands_hash)
+		build_sha=$(cat $build_home/$project/$commands_hash)
 		local_sha=$(latest_local_sha)
 		if [[ "$build_sha" == "$local_sha" ]]; then
 			build=false
@@ -128,6 +128,13 @@ function run_commands {
 		    fi
 		done
 		record_build $project $commands_hash
+	else
+		log "info" "Using previously built results..."
+		log "info" " "
+		if [[ "$remote" = true ]]; then 
+			details="built-sha @ $(cat $build_home/$project/$commands_hash)"
+			log "info" "--- $details ---"
+		fi
 	fi
 }
 
@@ -136,6 +143,7 @@ function record_build {
 	if [[ "$remote" = true ]] && [[ "$dry_run" != true ]]; then
 		local project=$1
 		local commands_hash=$2
+		if [[  ! -f "$build_home/$project" ]]; then mkdir -p  $build_home/$project; fi
 		latest_local_sha > $build_home/$project/$commands_hash
 	fi
 }
