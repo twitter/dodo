@@ -1,0 +1,15 @@
+language: scala
+
+scala:
+  - 2.11.8
+
+jdk:
+  - oraclejdk8
+
+before_script:
+  # default $SBT_OPTS is irrelevant to sbt launcher
+  - unset SBT_OPTS
+  - chmod +x ./bin/build
+
+script:
+  - ./bin/build --all
