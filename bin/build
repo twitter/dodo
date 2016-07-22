@@ -390,18 +390,17 @@ if [[ "$verbose" = true ]]; then set -x; fi
 # END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
 
 # BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
-START=`date +%s`
+SECONDS=0
 set_up
 echo_set_options
 build_projects $project
 
-END=`date +%s`
+duration=$SECONDS
 FORMATTED=`date "+%YT%H:%M:%S%z"`
-DIFF=$(echo "$END - $START" | bc)
 log "info" "------------------------------------------------------------------------"
 log "info" "BUILD SUCCESS"
 log "info" "------------------------------------------------------------------------"
-log "info" "Total time: $DIFF s"
+log "info" "Total time: $duration s"
 log "info" "Finished at: $FORMATTED"
 log "info" "Dodo version v$VERSION"
 log "info" "------------------------------------------------------------------------"
