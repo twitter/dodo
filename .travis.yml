@@ -12,4 +12,4 @@ before_script:
   - chmod +x ./bin/build
 
 script:
-  - ./bin/build --all
+  - ./bin/build --no-test --all

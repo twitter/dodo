@@ -1,10 +1,14 @@
-## Dodo - Twitter OSS Project Builder
+## Dodo
+
+[![Build Status](https://secure.travis-ci.org/twitter/dodo.png?branch=develop)](http://travis-ci.org/twitter/dodo?branch=develop)
+[![Project status](https://img.shields.io/badge/status-active-brightgreen.svg)](#status)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/twitter/finagle)
 
 <img src="./dodo-bird.jpeg"/>
 
 ### About
 
-When working with [Finagle][finagle] family of Twitter OSS projects it is sometimes necessary to be able to easily build against the develop branch of the other Twitter OSS repositories.
+When working with the [Finagle][finagle] family of Twitter OSS projects it is sometimes necessary to be able to easily build a project against the `develop` branch of the other Twitter OSS repositories.
 
 This repository contains a script to help users build and test the [Finagle][finagle] family of open-source projects. This includes the projects:
 
