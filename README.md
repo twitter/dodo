@@ -63,8 +63,9 @@ Builder options:
 --sbt-version:  	The sbt version to use when downloading the sbt launch jar. Default: unset.
 --dry-run: 			Output, but do not excute the sbt build commands. If using remotes 
                 	they will still be cloned. Default: false.
---verbose:        	Run in verbose mode. Default: false.
---help:				Print usage. 
+--verbose:          Run in verbose mode. Default: false.
+--trace:            Run in trace mode. Note: extremely verbose. Default: false.
+--help:             Print usage. 
 ```
 
 ### <a name="clean-up" href="#clean-up">Clean Up</a>

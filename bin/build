@@ -37,6 +37,9 @@ FINATRA_COMMANDS="./sbt +test:compile +publishLocal"
 declare "finatra_name=finatra"
 declare "finatra_commands=$FINATRA_COMMANDS"
 
+# Try to resolve sbt dependencies as maven.twttr.com is notoriously flakey.
+SBT_UPDATE_COMMAND="./sbt update"
+
 ## To clean up remove:
 #   $DODO_DIRECTORY/caches
 #   $DODO_DIRECTORY/clones
@@ -62,7 +65,29 @@ sbt_version=""          # [offline only] version of sbt-launch jar.
 proxy_url=""            # [offline only] download the sbt-launch jar from a given url
 sbt_jar=""              # [offline only] location of the downloaded sbt-launch jar.
 scala_version=""        # if set only build the projects with the given version (instead of cross-compiling with +)
-verbose=false           # set -x
+verbose=false           # prints build configuration options and other verbose statements
+trace=false             # set -x
+
+# Retries a command on failure
+# @param $1 - the maximum number of attempts
+# @param $2 - the command to run
+function retry {
+	local max_attempts=$1; shift
+    local cmd=$@
+    local attempt=1
+
+    until $cmd
+    do
+        if (( attempt == max_attempts ))
+        then
+            log "info" "Command failed, max attempts: $max_attempts exceeded."
+            return 1
+        else
+            log "info" "Command failed. Retrying..."
+            sleep 1
+        fi
+    done
+}
 
 # Note: does not work if the message contains an array
 function log {
@@ -104,15 +129,21 @@ function run_commands {
 		if [[ "$run_tests" = true ]]; then
 			commands="${commands//$to_replace/test}"
 		fi
+		# add resolving dependencies to commands
+		commands="$SBT_UPDATE_COMMAND;$commands"
+		# if we're offline we need to deal with the sbt-launch jar.
 		if [[ "$offline" = true ]]; then
 			to_replace_command="./sbt "
 			if [[ "$project" == "scrooge" ]]; then
 			    replacement_command="./sbt -sbt-jar $sbt_jar "
+			    # replace the sbt command for scrooge
+			    commands="${commands//$to_replace_command/$replacement_command}"
 			else 
-			    replacement_command="cp $sbt_jar ./sbt-launch.jar;./sbt "
-			fi
-			commands="${commands//$to_replace_command/$replacement_command}"
+				# otherwise, just append copying the jar command
+				commands="cp $sbt_jar ./sbt-launch.jar;$commands"
+			fi			
 		fi
+		# finally, run all commands
 		IFS=';' read -ra commandsArray <<< "$commands"
 		for command in "${commandsArray[@]}"; do
 			if [[ -n "$scala_version" ]]; then
@@ -122,9 +153,12 @@ function run_commands {
 					command="${command//.\/sbt /./sbt ++$scala_version }" # add scala version
 				fi
 			fi
+			if [[ "$verbose" != true ]]; then
+				command="${command//.\/sbt /./sbt --warn }" # set sbt log level to warn
+			fi
 		    log "info" "$command"
 		    if [[ "$dry_run" != true ]]; then 
-		    	eval $command
+		    	retry 3 $command
 		    fi
 		done
 		record_build $project $commands_hash
@@ -300,16 +334,17 @@ function print_usage {
                     Default: false (run tests).
   --scala-version   If set, do not cross-compile instead use this specific version for building all projects.
                     Default: unset (cross-compile).
-  --clone-dir		Directory into which to clone remotes. Default: $HOME/.dodo/clones
+  --clone-dir       Directory into which to clone remotes. Default: $HOME/.dodo/clones
   --local:          Build source from local filesystem instead of Github. 
                     Default: false (use Github sources).
-  --proxy:	 	    Base URL from which to resolve artifacts when working offline, (e.g., the sbt-launch.jar),
+  --proxy:          Base URL from which to resolve artifacts when working offline, (e.g., the sbt-launch.jar),
                     Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set 
                     --local and --sbt-version with this option. Default: unset.
   --sbt-version:    The sbt version to use when downloading the sbt launch jar. Default: unset.
   --dry-run: 	    Output, but do not excute the sbt build commands. If using remotes 
                     they will still be cloned. Default: false.
   --verbose:        Run in verbose mode. Default: false.
+  --trace:          Run in trace mode. Note: extremely verbose. Default: false.
   --help:           Print usage."
 }
 
@@ -318,20 +353,24 @@ function check_arg {
 	if [[ $arg == --* ]]; then
 		log "error" "Unrecognized argument: $arg" >&2
 		print_usage >&2
-		exit 1;
+		exit 1
 	fi
 }
 
 function echo_set_options {
 	if [[ "$verbose" = true ]]; then
-		log "info" "  remote: $remote"
-		log "info" "  run tests: $run_tests"
-		log "info" "  include: $include_project"
-		if [[ -n "$scala_version" ]]; then echo "  scala version: $scala_version"; fi
+		git_sha=$(git rev-parse HEAD)
+		current_date=$(date "+%YT%H:%M:%S%z")
+		echo "Twitter Dodo $VERSION ($git_sha; $current_date)"
+		java -version 2>&1
+		echo "Clone Github remotes: $remote"
+		echo "Run sbt tests: $run_tests"
+		echo "Include project: $include_project"
+		if [[ -n "$scala_version" ]]; then echo "Configured scala version: $scala_version"; fi
 		if [[ "$offline" = true ]]; then
-			log "info" "  offline: $offline"
-			log "info" "  proxy: $proxy_url"
-			log "info" "  sbt version: $sbt_version"
+			echo "Offline mode: $offline"
+			echo "Proxy url: $proxy_url"
+			echo "Configured sbt version: $sbt_version"
 		fi
 	fi
 }
@@ -355,6 +394,7 @@ for arg in "$@"; do
     "--sbt-version") 	sbt_version=$1; ((shift_count+=1)) ;;
     "--dry-run")		dry_run=true ;;
     "--verbose")		verbose=true ;;
+    "--trace")			trace=true ;;
     "--help") 			print_usage >&2; exit ;;	
     *)        			check_arg $arg;set -- "$@" "$arg"
   esac
@@ -386,7 +426,7 @@ fi
 if [[ "$build_all" = true ]] && [[ "$include_project" = true ]];then
 	log "warn" "Ignoring \"--include\" flag as \"--all\" was specified." >&2
 fi
-if [[ "$verbose" = true ]]; then set -x; fi
+if [[ "$trace" = true ]]; then set -x; fi
 # END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
 
 # BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
