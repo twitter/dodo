@@ -13,10 +13,6 @@ UTIL_COMMANDS="./sbt +test:compile +publishLocal"
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
-OSTRICH_COMMANDS="./sbt +test:compile +publishLocal"
-declare "ostrich_name=ostrich"
-declare "ostrich_commands=$OSTRICH_COMMANDS"
-
 SCROOGE_CORE_COMMANDS="./sbt +scrooge-publish-local/publishLocal;./sbt ++2.10.6 scrooge-generator/publishLocal scrooge-sbt-plugin/publishLocal"
 declare "scroogecore_name=scrooge"
 declare "scroogecore_commands=$SCROOGE_CORE_COMMANDS"
@@ -52,9 +48,9 @@ clone_home=$DODO_DIRECTORY/clones
 build_home=$DODO_DIRECTORY/builds
 
 # Actual DAG list for building (order is important)
-projects=( "util" "ostrich" "scroogecore" "finagle" "scrooge" "twitter-server" "finatra" )
+projects=( "util" "scroogecore" "finagle" "scrooge" "twitter-server" "finatra" )
 # Validation project list
-project_list=( "util" "ostrich" "finagle" "scrooge" "twitter-server" "finatra" )
+project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" )
 
 # Initialize defaults
 build_all=false         # build all projects in the DAG list

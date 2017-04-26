@@ -17,7 +17,6 @@ This repository contains a script to help users build and test the [Finagle][fin
 [Finagle][finagle]  
 [TwitterServer][twitter-server]  
 [Finatra][finatra]  
-[Ostrich][ostrich]  
 
 ### Usage
 
@@ -36,7 +35,7 @@ If you want to by-pass this caching you can work in `local`-mode (which is gener
 $ ./bin/build --no-test finagle
 ```
 
-The above command will clone all necessary Github Twitter OSS repos for building Finagle (util, ostrich, and scrooge), build, and publish them locally such that you can build your copy of Finagle against the locally published dependencies. Since `--no-test` is passed it will compile but not run each project's tests.
+The above command will clone all necessary Github Twitter OSS repos for building Finagle (util and scrooge), build, and publish them locally such that you can build your copy of Finagle against the locally published dependencies. Since `--no-test` is passed it will compile but not run each project's tests.
 
 If you want to pass an option that take a value, e.g., `--sbt-version`, use a space. E.g.,
 
@@ -81,7 +80,6 @@ $ ~/.dodo/clones
 To clean-up this state, simply delete these directories. Note, the `~/.dodo/clones` directory contains all previously cloned repositories.
 
 [util]: https://github.com/twitter/util
-[ostrich]: https://github.com/twitter/ostrich
 [scrooge]: https://github.com/twitter/scrooge
 [finagle]: https://github.com/twitter/finagle
 [twitter-server]: https://github.com/twitter/twitter-server
