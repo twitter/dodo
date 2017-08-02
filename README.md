@@ -32,7 +32,7 @@ If you want to by-pass this caching you can work in `local`-mode (which is gener
 #### Example command:
 
 ```bash
-$ ./bin/build --no-test finagle
+$ dodo/bin/build --no-test finagle
 ```
 
 The above command will clone all necessary Github Twitter OSS repos for building Finagle (util and scrooge), build, and publish them locally such that you can build your copy of Finagle against the locally published dependencies. Since `--no-test` is passed it will compile but not run each project's tests.
