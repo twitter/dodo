@@ -13,8 +13,8 @@ UTIL_COMMANDS="./sbt +test:compile +publishLocal; ./sbt ++2.11.11 util-intellij/
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
-SCROOGE_CORE_COMMANDS="./sbt +scrooge-publish-local/publishLocal;./sbt ++2.10.6 scrooge-generator/publishLocal scrooge-sbt-plugin/publishLocal"
-# TODO fix sbt 1.0.0 publishing: ./sbt ++2.12.3 ^^1.0.0 scrooge-generator/publishLocal scrooge-sbt-plugin/publishLocal"
+SCROOGE_CORE_COMMANDS="./sbt +scrooge-publish-local/publishLocal;./sbt ++2.10.6 scrooge-generator/publishLocal;./sbt ^^0.13.16 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ^^1.0.0 publishLocal"
+
 declare "scroogecore_name=scrooge"
 declare "scroogecore_commands=$SCROOGE_CORE_COMMANDS"
 
@@ -78,7 +78,7 @@ function retry {
     local cmd=$@
     local attempt=1
 
-    until $cmd
+    until eval $cmd
     do
         if (( attempt == max_attempts ))
         then
@@ -86,6 +86,7 @@ function retry {
             return 1
         else
             log "info" "Command failed. Retrying..."
+	    ((attempt++))
             sleep 1
         fi
     done
@@ -154,15 +155,7 @@ function run_commands {
         commands="$SBT_UPDATE_COMMAND;$commands"
         # if we're offline we need to deal with the sbt-launch jar.
         if [[ "$offline" = true ]]; then
-            to_replace_command="./sbt "
-            if [[ "$project_name" == "scrooge" ]]; then
-                replacement_command="./sbt -sbt-jar $sbt_jar "
-                # replace the sbt command for scrooge
-                commands="${commands//$to_replace_command/$replacement_command}"
-            else 
-                # otherwise, just append copying the jar command
-                commands="cp $sbt_jar ./sbt-launch.jar;$commands"
-            fi            
+            commands="cp $sbt_jar ./sbt-launch.jar;$commands"
         fi
         # finally, run all commands
         IFS=';' read -ra commandsArray <<< "$commands"
@@ -274,7 +267,7 @@ function build {
 # When we are offline we need to be able to download an sbt-launch.jar from
 # an accessible URL (typically an internal repository).
 function download_sbt_launch_jar {
-    sbt_jar=`pwd`/sbt-launch-${sbt_version}.jar
+    sbt_jar=`pwd`/sbt-launch.jar
     # clean up any previously downloaded sbt launch jar
     if [ -f "$sbt_jar" ]; then
         rm $sbt_jar
@@ -285,9 +278,9 @@ function download_sbt_launch_jar {
         print_usage >&2
         exit 1
     fi
-    local url="$proxy_url/org/scala-sbt/sbt-launch/${sbt_version}/sbt-launch-${sbt_version}.jar"
+    local url="$proxy_url/org/scala-sbt/sbt-launch/${sbt_version}/sbt-launch.jar"
     wget $url
-    sbt_jar=`pwd`/sbt-launch-${sbt_version}.jar
+    sbt_jar=`pwd`/sbt-launch.jar
     ls -l $sbt_jar
 }
 
