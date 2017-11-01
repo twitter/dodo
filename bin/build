@@ -7,7 +7,7 @@ set -euo pipefail
 #
 # See: print_usage function for usage
 #######################################################################
-VERSION="0.0.1"
+VERSION="17.10.0"
 
 UTIL_COMMANDS="./sbt +test:compile +publishLocal; ./sbt ++2.11.11 util-intellij/publishLocal"
 declare "util_name=util"
@@ -34,12 +34,12 @@ FINATRA_COMMANDS="./sbt +test:compile +publishLocal"
 declare "finatra_name=finatra"
 declare "finatra_commands=$FINATRA_COMMANDS"
 
-# Try to resolve sbt dependencies as maven.twttr.com is notoriously flakey.
+# Try to resolve sbt dependencies, useful for flaky repositories.
 SBT_UPDATE_COMMAND="./sbt update"
 # Run sbt clean
 SBT_CLEAN_COMMAND="./sbt clean"
 
-## To clean up remove:
+## To clean up run with "--clean-files" or remove:
 #   $DODO_DIRECTORY/caches
 #   $DODO_DIRECTORY/clones
 #   $DODO_DIRECTORY/builds
@@ -55,7 +55,7 @@ project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" )
 
 # Initialize defaults
 build_all=false         # build all projects in the DAG list
-clean=false             # run "sbt clean" before running other sbt commands.
+clean=false             # delete any sbt-launch.jar and run "sbt clean" before running other sbt commands.
 dry_run=false           # output but don't execute the build commands
 remote=true             # if we should build projects from remote Github URIs
 run_tests=true          # if we should run tests when building projects
@@ -69,6 +69,7 @@ verbose=false           # prints build configuration options and other verbose s
 trace=false             # set -x
 branch="develop"        # branch to clone for all libraries when building projects from remote Github URIs
 publish_m2=false        # also publish to the local ~/.m2 repository
+clean_files=false       # remove dodo caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, $DODO_DIRECTORY/builds.
 
 # Retries a command on failure
 # @param $1 - the maximum number of attempts
@@ -96,8 +97,8 @@ function retry {
 function log {
     local severity=$1
     local message=$2
-    local uppercaseSeverity=$(echo $severity | awk '{print toupper($0)}')
-    echo "[$uppercaseSeverity] $message"
+    local lowercaseSeverity=$(echo $severity | awk '{print tolower($0)}')
+    echo "[$lowercaseSeverity] $message"
 }
 
 function contains_project {
@@ -251,7 +252,7 @@ function build {
     clone $project_name
     # cd into project directory; run commands; cd back
     cd $project_name
-
+    
     details="local"
     if [[ "$remote" = true ]]; then details="git-sha @ $(cat $cache_home/$project_name)"; fi
     log "info" "------------------------------------------------------------------------"
@@ -260,6 +261,11 @@ function build {
     log "info" " "
     log "info" "--- $details ---"
     log "info" " "
+    if [[ "$clean" = true ]]; then
+        printf '[info] Cleaning sbt-launch.jar...'
+        rm -f sbt-launch.jar > /dev/null 2>&1
+        printf 'done.\n'
+    fi
     run_commands $project $project_name "$(array_get ${project//-/} commands)"
     cd - > /dev/null 2>&1
 }
@@ -316,7 +322,7 @@ function build_projects {
     log "info" "------------------------------------------------------------------------"
     log "info" "Dodo Build Order:$details"
     if [ "${#to_build[@]}" -gt "0" ]; then
-        printf '[INFO]   %s\n' "${to_build[@]}"
+        printf '[info]   %s\n' "${to_build[@]}"
         for project in ${to_build[@]}; do
             build $project
             log "info" " "
@@ -328,6 +334,14 @@ function build_projects {
 }
 
 function set_up {
+    if [[ "$clean_files" = true ]]; then
+        printf '[info] Cleaning Dodo caches...'
+        rm -fr $cache_home
+        rm -fr $clone_home
+        rm -fr $build_home
+        printf 'done.\n'
+    fi
+
     if [ ! -d "$cache_home" ]; then
         mkdir -p $cache_home
     fi
@@ -343,7 +357,9 @@ function print_usage {
     echo "USAGE: $0 --local --no-test --include --scala-version 2.11.7 <project>"
     echo "Options:
   --all             Build all projects in the DAG list (overrides --include). Default: false.
-  --clean           Run sbt clean command before running other sbt commands. Default: false.
+  --clean           Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
+  --clean-files     Delete all Dodo caches, e.g., $DODO_HOME/caches, $DODO_HOME/clones, 
+                    and $DODO_HOME/builds. Default: false.
   --include         Include building of the given project. Default: false.
   --no-test         Do not run tests (will still compile tests via test:compile). 
                     Default: false (run tests).
@@ -378,17 +394,20 @@ function echo_set_options {
     if [[ "$verbose" = true ]]; then
         git_sha=$(git rev-parse HEAD)
         current_date=$(date "+%YT%H:%M:%S%z")
-        echo "Twitter Dodo $VERSION ($git_sha; $current_date)"
-        java -version 2>&1
-        echo "Clone Github remotes: $remote; branch=$branch"
-        echo "Run sbt tests: $run_tests"
-        echo "Include project: $include_project"
-        if [[ -n "$scala_version" ]]; then echo "Configured scala version: $scala_version"; fi
+        log "debug" "Twitter Dodo $VERSION ($git_sha; $current_date)"
+        echo "$(java -version 2>&1)"
+        log "debug" "Clone Github remotes: $remote; branch=$branch"
+        log "debug" "Run tests: $run_tests"
+        log "debug" "Sbt clean: $clean"
+        log "debug" "Clean Dodo caches and sbt-launch.jar: $clean_files"
+        log "debug" "Include project: $include_project"
+        if [[ -n "$scala_version" ]]; then log "debug" "Configured scala version: $scala_version"; fi
         if [[ "$offline" = true ]]; then
-            echo "Offline mode: $offline"
-            echo "Proxy url: $proxy_url"
-            echo "Configured sbt version: $sbt_version"
+            log "debug" "Offline mode: $offline"
+            log "debug" "Proxy url: $proxy_url"
+            log "debug" "Configured sbt version: $sbt_version"
         fi
+        log "debug" "Publish M2: $publish_m2"
     fi
 }
 
@@ -413,6 +432,7 @@ for arg in "$@"; do
     "--sbt-version")    sbt_version=$1; ((shift_count+=1)) ;;
     "--dry-run")        dry_run=true ;;
     "--publish-m2")     publish_m2=true ;;
+    "--clean-files")    clean_files=true ;;
     "--verbose")        verbose=true ;;
     "--trace")          trace=true ;;
     "--help")           print_usage >&2; exit ;;

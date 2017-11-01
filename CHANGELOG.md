@@ -1,5 +1,21 @@
 # Change Log
-All notable changes to this project will be documented in this file. Note that ``RB_ID=#`` corresponds to associated message in commits.
+All notable changes to this project will be documented in this file. Note that ``RB_ID=#`` and ``PHAB_ID=#`` correspond to associated message in commits.
+
+## [Unreleased]
+
+### Added
+
+* dodo - Introduce the `--clean-files` directive which will delete Dodo caches before 
+  runnning a Dodo build. Additionally, we update the `--clean` directive to include removing 
+  any sbt-launch.jar to aid in sbt version upgrades. ``PHAB_ID=D106719``
+
+### Changed
+
+### Fixed
+
+### Closed
+
+## [dodo-0.0.1](#)
 
 ### Added
 

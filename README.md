@@ -26,13 +26,12 @@ There are two main modes to usage: `local` or `remote`. By default Dodo works in
 
 Additionally, in `remote`-mode Dodo attempts to cache commands it has run against the local SHA. If it finds that it has run the given commands against the currently cached SHA for a repository it will not run them again. See the [Clean Up](#clean-up) section for more information.
 
-
 If you want to by-pass this caching you can work in `local`-mode (which is generally faster). This mode assumes that all of the relevant projects exist on the local filesystem in directories relative to where the bin/build script is run. This mode does not do any type of caching.
 
 #### Example command:
 
 ```bash
-$ dodo/bin/build --no-test finagle
+$ ./dodo/bin/build --no-test finagle
 ```
 
 The above command will clone all necessary Github Twitter OSS repos for building Finagle (util and scrooge), build, and publish them locally such that you can build your copy of Finagle against the locally published dependencies. Since `--no-test` is passed it will compile but not run each project's tests.
@@ -40,14 +39,16 @@ The above command will clone all necessary Github Twitter OSS repos for building
 If you want to pass an option that take a value, e.g., `--sbt-version`, use a space. E.g.,
 
 ```bash
-$ ./bin/build --no-test --scala-version 2.11.7 finagle
+$ ./dodo/bin/build --no-test --scala-version 2.12.1 finagle
 ```
 
 Builder options:
 
 ```
 --all:              Build all projects in the DAG list (overrides `--include`). Default: false
---clean:            Run sbt clean command before running other sbt commands. Default: false.
+--clean             Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
+--clean-files       Delete all Dodo caches, e.g., $DODO_HOME/caches, $DODO_HOME/clones, 
+                    and $DODO_HOME/builds. Default: false.
 --include:          Include building of the given project. Default: false.
 --no-test:          Do not run tests (will still compile tests via `test:compile`). Default: false (run tests).
 --scala-version:    If set, do not cross-compile instead use this specific version for building all projects. 
@@ -77,7 +78,7 @@ $ ~/.dodo/caches
 $ ~/.dodo/clones
 ```
 
-To clean-up this state, simply delete these directories. Note, the `~/.dodo/clones` directory contains all previously cloned repositories.
+To clean-up this state, simply delete these directories or include the `--clean-files` option. Note, the `~/.dodo/clones` directory contains all previously cloned repositories.
 
 [util]: https://github.com/twitter/util
 [scrooge]: https://github.com/twitter/scrooge
