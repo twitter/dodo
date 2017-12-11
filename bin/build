@@ -8,6 +8,7 @@ set -euo pipefail
 # See: print_usage function for usage
 #######################################################################
 VERSION="17.12.0"
+NAME="Dodo"
 
 UTIL_COMMANDS="./sbt +test:compile +publishLocal; ./sbt ++2.11.11 util-intellij/publishLocal"
 declare "util_name=util"
@@ -76,10 +77,10 @@ clean_files=false       # remove dodo caches, e.g., $DODO_DIRECTORY/caches, $DOD
 # @param $2 - the command to run
 function retry {
     local max_attempts=$1; shift
-    local cmd=$@
+    local cmd=( "$@" )
     local attempt=1
 
-    until eval $cmd
+    until eval "$cmd"
     do
         if (( attempt == max_attempts ))
         then
@@ -97,7 +98,7 @@ function retry {
 function log {
     local severity=$1
     local message=$2
-    local lowercaseSeverity=$(echo $severity | awk '{print tolower($0)}')
+    local lowercaseSeverity=$(echo "$severity" | awk '{print tolower($0)}')
     echo "[$lowercaseSeverity] $message"
 }
 
@@ -124,7 +125,7 @@ function run_commands {
     local build=true
     if [[ "$remote" = true ]] && [[ -f "$build_home/$project/$commands_hash" ]]; then
         # there's a cached build by commands hash file, check it
-        build_sha=$(cat $build_home/$project/$commands_hash)
+        build_sha=$(cat "$build_home/$project/$commands_hash")
         local_sha=$(latest_local_sha)
         if [[ "$build_sha" == "$local_sha" ]]; then
             build=false
@@ -173,15 +174,15 @@ function run_commands {
             fi
             log "info" "$command"
             if [[ "$dry_run" != true ]]; then 
-                retry 3 $command
+                retry 3 "$command"
             fi
         done
-        record_build $project $commands_hash
+        record_build "$project" "$commands_hash"
     else
         log "info" "Using previously built results..."
         log "info" " "
         if [[ "$remote" = true ]]; then 
-            details="built-sha @ $(cat $build_home/$project/$commands_hash)"
+            details="built-sha @ $(cat "$build_home/$project/$commands_hash")"
             log "info" "--- $details ---"
         fi
     fi
@@ -192,66 +193,70 @@ function record_build {
     if [[ "$remote" = true ]] && [[ "$dry_run" != true ]]; then
         local project=$1
         local commands_hash=$2
-        if [[  ! -f "$build_home/$project" ]]; then mkdir -p  $build_home/$project; fi
-        latest_local_sha > $build_home/$project/$commands_hash
+        if [[  ! -f "$build_home/$project" ]]; then mkdir -p "$build_home/$project"; fi
+        latest_local_sha > "$build_home/$project/$commands_hash"
     fi
 }
 
 # Assumes you are in the correct directory when you run this
 function latest_local_sha {
-    git rev-parse $branch
+    git rev-parse "$branch"
 }
 
 function record_latest_sha {
     local project=$1
     ## store the lastest SHA
-    latest_local_sha > $cache_home/$project
+    latest_local_sha > "$cache_home/$project"
 }
 
 function clone {
     if [[ "$remote" = true ]]; then
-        cd $clone_home
         if [ ! -d "$clone_home/$project_name" ]; then
+            cd "$clone_home"
             # doesn't yet exist clone and store SHA
             log "info" "------------------------------------------------------------------------"
             log "info" "Cloning $branch branch for repository: $project_name"
             log "info" "------------------------------------------------------------------------"
-            git clone https://github.com/twitter/$project_name.git --branch $branch --depth=1
-            cd $project_name
-            record_latest_sha $project_name
+            git clone https://github.com/twitter/"$project_name".git --branch "$branch" --depth=1
+            cd "$clone_home/$project_name"
+            record_latest_sha "$project_name"
             log "info" " "
         else
-            cd $project_name
-            # a clone already exists; is it up to date?
-            if [ -f "$cache_home/$project_name" ]; then
-                # read cache
-                local_sha=$(cat $cache_home/$project_name)
-            else
-                # read local directory
-                local_sha=$(latest_local_sha)
+            cd "$clone_home/$project_name"
+            # are we in the branch we expect? 
+            local local_branch=$(git rev-parse --abbrev-ref HEAD)
+            if [[ "$local_branch" != "$branch" ]]; then
+                # need to re-clone with correct branch
+                log "info" "Requested branch: $branch is different than cached cloned branch: $local_branch. Deleting clone and re-cloning branch $branch."    
+                cd "$clone_home"; rm -fr "$project_name" > /dev/null 2>&1
+                git clone https://github.com/twitter/"$project_name".git --branch "$branch" --depth=1
+                cd "$clone_home/$project_name"
+                record_latest_sha "$project_name"
             fi
-            remote_sha=$(git ls-remote https://github.com/twitter/$project_name.git -- refs/heads/$branch | cut -f1)
+            # a clone already exists, last SHA should be cached; is it up to date?
+            local_sha=$(cat "$cache_home/$project_name")
+            remote_sha=$(git ls-remote https://github.com/twitter/"$project_name".git -- refs/heads/"$branch" | cut -f1)
             if [[ "$local_sha" != "$remote_sha" ]]; then
                 log "info" "------------------------------------------------------------------------"
                 log "info" "Updating previously cloned $branch branch for repository: $project_name"
                 log "info" "------------------------------------------------------------------------"
                 # update clone and store SHA
-                cd $clone_home/$project_name
+                cd "$clone_home/$project_name"
                 git pull
-                record_latest_sha $project_name
+                record_latest_sha "$project_name"
             fi
             log "info" " "
         fi
-        cd $clone_home
+        cd "$clone_home"
     fi
 }
 
 function build {    
     local project=$1
     local project_name="$(array_get ${project//-/} name)"
-    clone $project_name
+    clone "$project_name"
     # cd into project directory; run commands; cd back
-    cd $project_name
+    cd "$project_name"
     
     details="local"
     if [[ "$remote" = true ]]; then details="git-sha @ $(cat $cache_home/$project_name)"; fi
@@ -266,17 +271,17 @@ function build {
         rm -f sbt-launch.jar > /dev/null 2>&1
         printf 'done.\n'
     fi
-    run_commands $project $project_name "$(array_get ${project//-/} commands)"
+    run_commands "$project" "$project_name" "$(array_get ${project//-/} commands)"
     cd - > /dev/null 2>&1
 }
 
 # When we are offline we need to be able to download an sbt-launch.jar from
 # an accessible URL (typically an internal repository).
 function download_sbt_launch_jar {
-    sbt_jar=`pwd`/sbt-launch.jar
+    sbt_jar=$(pwd)/sbt-launch.jar
     # clean up any previously downloaded sbt launch jar
     if [ -f "$sbt_jar" ]; then
-        rm $sbt_jar
+        rm "$sbt_jar"
     fi
     # download new sbt launch jar
     if [[ -z "$proxy_url" ]]; then
@@ -286,8 +291,8 @@ function download_sbt_launch_jar {
     fi
     local url="$proxy_url/org/scala-sbt/sbt-launch/${sbt_version}/sbt-launch.jar"
     wget $url
-    sbt_jar=`pwd`/sbt-launch.jar
-    ls -l $sbt_jar
+    sbt_jar=$(pwd)/sbt-launch.jar
+    ls -l "$sbt_jar"
 }
 
 function check_offline {
@@ -304,7 +309,7 @@ function build_projects {
     
     log "info" "Determining projects..."
     # loop until we find the matching project or all
-    for current in ${projects[@]}; do
+    for current in "${projects[@]}"; do
         if [ "$current" = "$project" ] && [[ "$build_all" != true ]]; then
             break
         else
@@ -320,11 +325,11 @@ function build_projects {
     local details=""
     if [[ "$dry_run" = true ]]; then details=" (dry-run)"; fi
     log "info" "------------------------------------------------------------------------"
-    log "info" "Dodo Build Order:$details"
+    log "info" "$NAME Build Order:$details"
     if [ "${#to_build[@]}" -gt "0" ]; then
         printf '[info]   %s\n' "${to_build[@]}"
-        for project in ${to_build[@]}; do
-            build $project
+        for project in "${to_build[@]}"; do
+            build "$project"
             log "info" " "
         done
     else
@@ -335,21 +340,21 @@ function build_projects {
 
 function set_up {
     if [[ "$clean_files" = true ]]; then
-        printf '[info] Cleaning Dodo caches...'
-        rm -fr $cache_home
-        rm -fr $clone_home
-        rm -fr $build_home
+        printf '[info] Cleaning $NAME caches...'
+        rm -fr "$cache_home"
+        rm -fr "$clone_home"
+        rm -fr "$build_home"
         printf 'done.\n'
     fi
 
     if [ ! -d "$cache_home" ]; then
-        mkdir -p $cache_home
+        mkdir -p "$cache_home"
     fi
     if [ ! -d "$clone_home" ]; then
-        mkdir -p $clone_home
+        mkdir -p "$clone_home"
     fi
     if [ ! -d "$build_home" ]; then
-        mkdir -p $build_home
+        mkdir -p "$build_home"
     fi
 }
 
@@ -358,7 +363,7 @@ function print_usage {
     echo "Options:
   --all             Build all projects in the DAG list (overrides --include). Default: false.
   --clean           Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
-  --clean-files     Delete all Dodo caches, e.g., $DODO_HOME/caches, $DODO_HOME/clones, 
+  --clean-files     Delete all $NAME caches, e.g., $DODO_HOME/caches, $DODO_HOME/clones, 
                     and $DODO_HOME/builds. Default: false.
   --include         Include building of the given project. Default: false.
   --no-test         Do not run tests (will still compile tests via test:compile). 
@@ -392,22 +397,33 @@ function check_arg {
 
 function echo_set_options {
     if [[ "$verbose" = true ]]; then
+        log "debug" "------------------------------------------------------------------------"
         git_sha=$(git rev-parse HEAD)
         current_date=$(date "+%YT%H:%M:%S%z")
-        log "debug" "Twitter Dodo $VERSION ($git_sha; $current_date)"
-        echo "$(java -version 2>&1)"
-        log "debug" "Clone Github remotes: $remote; branch=$branch"
-        log "debug" "Run tests: $run_tests"
-        log "debug" "Sbt clean: $clean"
-        log "debug" "Clean Dodo caches and sbt-launch.jar: $clean_files"
-        log "debug" "Include project: $include_project"
+        log "debug" "Twitter $NAME $VERSION ($git_sha; $current_date)"
+        log "debug" ""
+        log "debug" "--- java version ---"
+        version=$(java -version 2>&1); version_lines=$(echo "$(java -version 2>&1)" | wc -l)     
+        i=1; while [ "$i" -le "$version_lines" ]; do
+            line=$(echo "$version" | head -n $i | tail -n 1)
+            log "debug" "  $line"
+            i=$(($i + 1))
+        done
+        log "debug" ""
+        log "debug" "--- options ---"
+        log "debug" "  clone remotes: $remote"
+        log "debug" "  branch: $branch"
+        log "debug" "  run tests: $run_tests"
+        log "debug" "  sbt clean: $clean"
+        log "debug" "  clean caches and sbt-launch.jar: $clean_files"
+        log "debug" "  include project: $include_project"
         if [[ -n "$scala_version" ]]; then log "debug" "Configured scala version: $scala_version"; fi
         if [[ "$offline" = true ]]; then
-            log "debug" "Offline mode: $offline"
-            log "debug" "Proxy url: $proxy_url"
-            log "debug" "Configured sbt version: $sbt_version"
+            log "debug" "offline mode: $offline"
+            log "debug" "proxy url: $proxy_url"
+            log "debug" "configured sbt version: $sbt_version"
         fi
-        log "debug" "Publish M2: $publish_m2"
+        log "debug" "  publishM2: $publish_m2"
     fi
 }
 
@@ -457,8 +473,8 @@ if [[ "$build_all" != true ]]; then
     if [[ "$shift_count" != "0" ]]; then shift $shift_count; fi
     # Read in remaining option -- which should be the project name.
     project="$1"
-    if ! contains_project $project; then
-        echo "[ERROR] Project must be one of: \"${project_list[@]}\"" >&2
+    if ! contains_project "$project"; then
+        echo "[ERROR] Project must be one of: \"${project_list[*]}\"" >&2
         print_usage >&2
         exit 1
     fi
@@ -478,15 +494,15 @@ fi
 SECONDS=0
 set_up
 echo_set_options
-build_projects $project
+build_projects "$project"
 
 duration=$SECONDS
-FORMATTED=`date "+%YT%H:%M:%S%z"`
+FORMATTED=$(date "+%YT%H:%M:%S%z")
 log "info" "------------------------------------------------------------------------"
 log "info" "BUILD SUCCESS"
 log "info" "------------------------------------------------------------------------"
 log "info" "Total time: $duration s"
 log "info" "Finished at: $FORMATTED"
-log "info" "Dodo version v$VERSION"
+log "info" "Twitter $NAME version v$VERSION"
 log "info" "------------------------------------------------------------------------"
 # END: EXECUTE BUILD ------------------------------------------------------------------------------------
