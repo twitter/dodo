@@ -39,33 +39,35 @@ The above command will clone all necessary Github Twitter OSS repos for building
 If you want to pass an option that take a value, e.g., `--sbt-version`, use a space. E.g.,
 
 ```bash
-$ ./dodo/bin/build --no-test --scala-version 2.12.1 finagle
+$ ./dodo/bin/build --no-test --scala-version 2.12.4 finagle
 ```
 
 Builder options:
 
 ```
---all:              Build all projects in the DAG list (overrides `--include`). Default: false
---clean             Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
---clean-files       Delete all Dodo caches, e.g., $DODO_HOME/caches, $DODO_HOME/clones, 
-                    and $DODO_HOME/builds. Default: false.
---include:          Include building of the given project. Default: false.
---no-test:          Do not run tests (will still compile tests via `test:compile`). Default: false (run tests).
---scala-version:    If set, do not cross-compile instead use this specific version for building all projects. 
-                    Default: unset (cross-compile).
---clone-dir:        Directory into which to clone remotes. Default: $HOME/.dodo/clones
---local:            Build source from local filesystem instead of Github. Default: false (use Github sources).
---branch            Branch to use when building from Github sources. Default: develop.
---proxy:            Base URL from which to resolve artifacts when working offline, (e.g., the sbt-launch.jar). 
-                    Example: `--proxy https://my.internal.company.repo/sbt-repo`. 
-                    NOTE: you MUST set `--local` and `--sbt-version` with this option. Default: unset.
---publish-m2:       Also publish artifacts to the local ~/.m2 repository. Default: false.
---sbt-version:      The sbt version to use when downloading the sbt launch jar. Default: unset.
---dry-run:          Output, but do not execute the sbt build commands. If using remotes they will still be cloned.
-                    Default: false.
---verbose:          Run in verbose mode. Default: false.
---trace:            Run in trace mode. Note: extremely verbose. Default: false.
---help:             Print usage. 
+--all             Build all projects in the DAG list (overrides --include). Default: false.
+--clean           Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
+--clean-files     Delete all Dodo caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, 
+                  and $DODO_DIRECTORY/builds. Default: false.
+--include         Include building of the given project. Default: false.
+--no-test         Do not run tests (will still compile tests via test:compile). 
+                  Default: false (run tests).
+--scala-version   If set, do not cross-compile instead use this specific version for building all projects.
+                  Default: unset (cross-compile).
+--clone-dir       Directory into which to clone remotes. Default: $HOME/.dodo/clones
+--local           Build source from local filesystem instead of Github. 
+                  Default: false (use Github sources).
+--branch          Branch to use when building from Github sources. Default: develop.
+--proxy           Base URL from which to resolve artifacts when working offline, (e.g., the sbt-launch.jar),
+                  Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set 
+                  --local and --sbt-version with this option. Default: unset.
+--publish-m2      Also publish artifacts to the local ~/.m2 repository. Default: false.
+--sbt-version     The sbt version to use when downloading the sbt launch jar. Default: unset.
+--dry-run         Output, but do not execute the sbt build commands. If using remotes
+                  they will still be cloned. Default: false.
+--verbose         Run in verbose mode. Default: false.
+--trace           Run in trace mode. Note: extremely verbose. Default: false.
+--help            Print usage.
 ```
 
 ### <a name="clean-up" href="#clean-up">Clean Up</a>

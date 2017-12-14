@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file. Note that `
 
 ### Added
 
+* dodo - Clean the ivy cache (~/.ivy2/cache/com.twitter) of any twitter-oss
+  project after running an sbt update to ensure that we resolve any locally
+  built version. Better logging and ensure `openssl` is installed before 
+  attempting to run the script. ``PHAB_ID=D121300``
+
 * dodo - Introduce the `--clean-files` directive which will delete Dodo caches before 
   runnning a Dodo build. Additionally, we update the `--clean` directive to include removing 
   any sbt-launch.jar to aid in sbt version upgrades. ``PHAB_ID=D106719``

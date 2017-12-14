@@ -49,6 +49,10 @@ cache_home=$DODO_DIRECTORY/caches
 clone_home=$DODO_DIRECTORY/clones
 build_home=$DODO_DIRECTORY/builds
 
+# Default ivy home
+DEFAULT_IVY_HOME="$HOME/.ivy2"
+ivy_home=${IVY_HOME:-DEFAULT_IVY_HOME}
+
 # Actual DAG list for building (order is important)
 projects=( "util" "scroogecore" "finagle" "scrooge" "twitter-server" "finatra" )
 # Validation project list
@@ -70,7 +74,7 @@ verbose=false           # prints build configuration options and other verbose s
 trace=false             # set -x
 branch="develop"        # branch to clone for all libraries when building projects from remote Github URIs
 publish_m2=false        # also publish to the local ~/.m2 repository
-clean_files=false       # remove dodo caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, $DODO_DIRECTORY/builds.
+clean_files=false       # remove caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, $DODO_DIRECTORY/builds.
 
 # Retries a command on failure
 # @param $1 - the maximum number of attempts
@@ -88,7 +92,7 @@ function retry {
             return 1
         else
             log "info" "Command failed. Retrying..."
-	    ((attempt++))
+            ((attempt++))
             sleep 1
         fi
     done
@@ -112,6 +116,43 @@ function array_get {
     local array=$1 index=$2
     local i="${array}_$index"
     printf '%s' "${!i}"
+}
+
+ # clean ivy cache -- prevents using any previously resolved dependency over a locally built version.
+function clean_ivy {
+    local project=$1
+    local to_delete=()
+    
+    for current in "${project_list[@]}"; do
+        if [ "$current" = "$project" ]; then
+            break
+        else
+            to_delete+=("$current")
+        fi
+    done
+    to_delete+=("$project")
+    for artifact in "${to_delete[@]}"; do
+        local artifact_base="${ivy_home:?}/cache/com.twitter/${artifact}"
+        log "info" "Removing ivy resolution cache ${artifact_base}"
+        if [[ "$dry_run" != true ]]; then
+            rm -fr ${artifact_base}* > /dev/null 2>&1
+        fi
+    done
+}
+
+function sbt_update {
+    update_command="$SBT_UPDATE_COMMAND"
+    if [[ "$verbose" != true ]]; then
+        update_command="${update_command//.\/sbt /./sbt --warn }" # set sbt log level to warn
+    fi
+    # if we're offline we need to deal with the sbt-launch jar.
+    if [[ "$offline" = true ]]; then
+        update_command="cp $sbt_jar ./sbt-launch.jar;$update_command"
+    fi
+    log "info" "$update_command"
+    if [[ "$dry_run" != true ]]; then 
+        retry 3 "$update_command"
+    fi
 }
 
 function run_commands {
@@ -149,12 +190,14 @@ function run_commands {
                 commands="${commands//$publish_to_replace/+publishLocal +publishM2}"
             fi
         fi
+        # run sbt update (resolve dependencies)
+        sbt_update
+        # clean ivy caches
+        clean_ivy "$project"
         # add "sbt clean" to commands
         if [[ "$clean" == true ]]; then
             commands="$SBT_CLEAN_COMMAND;$commands"
         fi
-        # add resolving dependencies to commands
-        commands="$SBT_UPDATE_COMMAND;$commands"
         # if we're offline we need to deal with the sbt-launch jar.
         if [[ "$offline" = true ]]; then
             commands="cp $sbt_jar ./sbt-launch.jar;$commands"
@@ -266,7 +309,8 @@ function build {
     log "info" " "
     log "info" "--- $details ---"
     log "info" " "
-    if [[ "$clean" = true ]]; then
+    if [[ "$clean" = true ]] && [[ "$offline" = false ]]; then
+        # don't want to clean the jar if we're offline since we just downloaded it from a proxy
         printf '[info] Cleaning sbt-launch.jar...'
         rm -f sbt-launch.jar > /dev/null 2>&1
         printf 'done.\n'
@@ -340,31 +384,33 @@ function build_projects {
 
 function set_up {
     if [[ "$clean_files" = true ]]; then
-        printf '[info] Cleaning $NAME caches...'
+        printf "[info] Cleaning %s caches..." "$NAME"
         rm -fr "$cache_home"
         rm -fr "$clone_home"
         rm -fr "$build_home"
         printf 'done.\n'
     fi
 
-    if [ ! -d "$cache_home" ]; then
-        mkdir -p "$cache_home"
-    fi
-    if [ ! -d "$clone_home" ]; then
-        mkdir -p "$clone_home"
-    fi
-    if [ ! -d "$build_home" ]; then
-        mkdir -p "$build_home"
+    if [[ "$remote" = true ]]; then
+        if [ ! -d "$cache_home" ]; then
+            mkdir -p "$cache_home"
+        fi
+        if [ ! -d "$clone_home" ]; then
+            mkdir -p "$clone_home"
+        fi
+        if [ ! -d "$build_home" ]; then
+            mkdir -p "$build_home"
+        fi
     fi
 }
 
 function print_usage {
-    echo "USAGE: $0 --local --no-test --include --scala-version 2.11.7 <project>"
+    echo "USAGE: $0 --local --no-test --include --scala-version 2.12.4 <project>"
     echo "Options:
   --all             Build all projects in the DAG list (overrides --include). Default: false.
-  --clean           Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
-  --clean-files     Delete all $NAME caches, e.g., $DODO_HOME/caches, $DODO_HOME/clones, 
-                    and $DODO_HOME/builds. Default: false.
+  --clean           Delete any sbt-launch.jar and run \"sbt clean\" before running other sbt commands. Default: false.
+  --clean-files     Delete all $NAME caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, 
+                    and $DODO_DIRECTORY/builds. Default: false.
   --include         Include building of the given project. Default: false.
   --no-test         Do not run tests (will still compile tests via test:compile). 
                     Default: false (run tests).
@@ -419,15 +465,20 @@ function echo_set_options {
         log "debug" "  include project: $include_project"
         if [[ -n "$scala_version" ]]; then log "debug" "Configured scala version: $scala_version"; fi
         if [[ "$offline" = true ]]; then
-            log "debug" "offline mode: $offline"
-            log "debug" "proxy url: $proxy_url"
-            log "debug" "configured sbt version: $sbt_version"
+            log "debug" "  offline mode: $offline"
+            log "debug" "  proxy url: $proxy_url"
+            log "debug" "  configured sbt version: $sbt_version"
         fi
         log "debug" "  publishM2: $publish_m2"
+        log "debug" ""
     fi
 }
 
 # BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
+# check for openssl installed -- used for hashing build commands
+openssl_installed=$(which openssl)
+if [[ -z "$openssl_installed" ]]; then log "error" "OpenSSL required to run. Please install. On mac OSX, \"brew install openssl\" " >&2; exit 1; fi
+# check options
 if [[ -z "$@" ]]; then print_usage >&2; exit 1; fi
 # Simple option parsing. We could use getopts but rather use "long"
 # names only. And this is position-agnostic to the options, e.g.,
@@ -455,6 +506,7 @@ for arg in "$@"; do
     *)                  check_arg $arg;set -- "$@" "$arg"
   esac
 done
+if [[ "$trace" = true ]]; then set -x; fi
 if [[ "$offline" = true ]] && [[ -z "$sbt_version" ]]; then
     log "error" "Must supply an sbt version with \"--sbt-version\" when using \"--proxy URL\"." >&2
     print_usage >&2
@@ -474,7 +526,7 @@ if [[ "$build_all" != true ]]; then
     # Read in remaining option -- which should be the project name.
     project="$1"
     if ! contains_project "$project"; then
-        echo "[ERROR] Project must be one of: \"${project_list[*]}\"" >&2
+        log "error" "Project must be one of: \"${project_list[*]}\"" >&2
         print_usage >&2
         exit 1
     fi
@@ -482,7 +534,6 @@ fi
 if [[ "$build_all" = true ]] && [[ "$include_project" = true ]]; then
     log "warn" "Ignoring \"--include\" flag as \"--all\" was specified." >&2
 fi
-if [[ "$trace" = true ]]; then set -x; fi
 if [[ "$branch" != "develop" ]] && [[ "$branch" != "master" ]]; then
     log "error" "Branch can only be one of 'develop' or 'master'." >&2
     print_usage >&2
