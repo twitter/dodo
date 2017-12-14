@@ -51,7 +51,8 @@ build_home=$DODO_DIRECTORY/builds
 
 # Default ivy home
 DEFAULT_IVY_HOME="$HOME/.ivy2"
-ivy_home=${IVY_HOME:-DEFAULT_IVY_HOME}
+# Allow for setting of ivy_home via an environment var: IVY_HOME.
+ivy_home=${IVY_HOME:-$DEFAULT_IVY_HOME}
 
 # Actual DAG list for building (order is important)
 projects=( "util" "scroogecore" "finagle" "scrooge" "twitter-server" "finatra" )
