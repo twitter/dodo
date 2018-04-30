@@ -16,8 +16,6 @@ All notable changes to this project will be documented in this file. Note that `
 
 ### Changed
 
-* dodo - Publish scrooge-sbt-plugin for sbt 1.1.x. ``PHAB_ID=D164781``
-
 ### Fixed
 
 ### Closed
