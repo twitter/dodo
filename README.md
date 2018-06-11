@@ -1,10 +1,13 @@
-## Dodo
+<div align="center">
+  <img src="./dodo-bird.jpeg" width="500" height="400" />
+</div>
 
+-----------------
+
+## Dodo
 [![Build Status](https://secure.travis-ci.org/twitter/dodo.png?branch=develop)](http://travis-ci.org/twitter/dodo?branch=develop)
 [![Project status](https://img.shields.io/badge/status-active-brightgreen.svg)](#status)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/twitter/finagle)
-
-<img src="./dodo-bird.jpeg"/>
 
 ### About
 
