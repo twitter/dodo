@@ -31,7 +31,7 @@ Additionally, in `remote`-mode Dodo attempts to cache commands it has run agains
 
 If you want to by-pass this caching you can work in `local`-mode (which is generally faster). This mode assumes that all of the relevant projects exist on the local filesystem in directories relative to where the bin/build script is run. This mode does not do any type of caching.
 
-#### Example command:
+#### Example command
 
 ```bash
 $ ./dodo/bin/build --no-test finagle
@@ -45,7 +45,7 @@ If you want to pass an option that take a value, e.g., `--sbt-version`, use a sp
 $ ./dodo/bin/build --no-test --scala-version 2.12.4 finagle
 ```
 
-Builder options:
+#### Builder options
 
 ```
 --all             Build all projects in the DAG list (overrides --include). Default: false.
