@@ -24,9 +24,9 @@ The builder will build and locally publish via [sbt][sbt] all the Twitter OSS de
 
 There are two main modes to usage: `local` or `remote`. By default Dodo works in the `remote` mode, meaning it assumes that the Twitter OSS dependencies are meant to be downloaded from their remote locations in [Github](https://github.com/twitter). Dodo attempts to be somewhat smart and not clone repositories from Github if it already has a copy that is up-to-date with the latest SHA found in the remote repository. 
 
-Additionally, in `remote`-mode Dodo attempts to cache commands it has run against the local SHA. If it finds that it has run the given commands against the currently cached SHA for a repository it will not run them again. See the [Clean Up](#clean-up) section for more information.
+Additionally, in `remote` mode Dodo attempts to cache commands it has run against the local SHA. If it finds that it has run the given commands against the currently cached SHA for a repository it will not run them again. See the [Clean Up](#clean-up) section for more information.
 
-If you want to by-pass this caching you can work in `local`-mode (which is generally faster). This mode assumes that all of the relevant projects exist on the local filesystem in directories relative to where the bin/build script is run. This mode does not do any type of caching.
+If you want to bypass this caching you can work in `local` mode (which is generally faster). This mode assumes that all of the relevant projects exist on the local filesystem in directories relative to where the bin/build script is run. This mode does not do any type of caching.
 
 #### Example command:
 
@@ -72,7 +72,7 @@ Builder options:
 
 ### <a name="clean-up" href="#clean-up">Clean Up</a>
 
-The Dodo script maintains some state in $HOME/.dodo. This state is maintained when working in `remote`-mode. These are:
+The Dodo script maintains some state in $HOME/.dodo. This state is maintained when working in `remote` mode. These are:
 
 ```
 $ ~/.dodo/build
@@ -80,7 +80,7 @@ $ ~/.dodo/caches
 $ ~/.dodo/clones
 ```
 
-To clean-up this state, simply delete these directories or include the `--clean-files` option. Note, the `~/.dodo/clones` directory contains all previously cloned repositories.
+To clean up this state, simply delete these directories or include the `--clean-files` option. Note, the `~/.dodo/clones` directory contains all previously cloned repositories.
 
 [util]: https://github.com/twitter/util
 [scrooge]: https://github.com/twitter/scrooge
