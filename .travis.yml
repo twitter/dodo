@@ -6,6 +6,9 @@ scala:
 jdk:
   - oraclejdk8
 
+env:
+  secure: "hZpbFzSnEnsTRTVHUA+zRqJypT/Cp4AQRfNRzyoyhCOz5SF9TJRZU6JCO4kjTJ5UZ5toNpFfE6cV+1NCP5qG64Pdi7tG7RrBIM96LMt2VvwzoTjhjuFWNjGxt/TineT9yaM4kcF1YPLOcaCMCLY1WI4XllbPcEYOO2bTQXVp+/Ewf6ImPLYpA+tzhdomUT5ccjR6Ba/rM8+yGQxtgxD1Ibt8+lz5wOPxmgimIWekCdBFZtJeTCgUbrP+gcAko0YKXZ3Z7+zD0cKFGuQuOvCvNpBUa8XByosSA6CCFOUkuvxoDZN31IgCECQo07EaD2uWn+rWHy82D4IGCZ3cwLfCgdgAP/DL9UemYLcmS2Q6orLnNnI1ZHF0pxpAUjsaClOoJJjWUJYC0Na64jz8ZbjMg3hwfUZ3K9XZh0MIPIx4pBPVzTl2Tpiplg/cxjKON9MTvYxBqJm6x4GO4rnViuYSlRBXVXsl+3B6MO0B9Yq4TStq+GgMnY+7S/RFqNpKRJh4Ne/Z4Vmig8FSU+M+p9qA2L+p1puks8U0GYIrZp2bO8TvJz1X4Mof6JRvRfeqvOTsKA/2/KvSKvHmOtztCQxJ2Q/CRuYvjZQmmXLslrb7p+EmbR45JgXZiEMy7fkI3pWooIus9mkJ3OLgmAm5SWFMZxmXuabHmHrMf18FAD8Ol6g="
+
 before_script:
   # See https://docs.travis-ci.com/user/encrypting-files/#automated-encryption
   # for information on encrypting files with travis. This line decrypts the
@@ -13,7 +16,8 @@ before_script:
   - openssl aes-256-cbc -K $encrypted_913079356b93_key -iv $encrypted_913079356b93_iv -in sonatype.sbt.enc -out sonatype.sbt -d
   # default $SBT_OPTS is irrelevant to sbt launcher
   - unset SBT_OPTS
-  - chmod +x ./bin/build
+  - chmod +x ./bin/snapshot
 
 script:
-  - ./bin/build --no-test --dry-run --all
+  # Test publishing util first, since it doesn't have any dependencies
+  - ./bin/snapshot util

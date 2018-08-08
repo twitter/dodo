@@ -1,0 +1,467 @@
+#!/bin/bash
+
+set -euo pipefail
+
+############################################################################################
+# RELEASE-IT!
+# ===========
+# Supports publishing snapshots from Github develop branch of the Twitter OSS libraries.
+############################################################################################
+
+# Util publishes two projects independently
+UTIL_COMMANDS="./sbt +publishLocal +publishLocal +publish +publishM2;"
+UTIL_COMMANDS="${UTIL_COMMANDS}./sbt \"project util-intellij\" +publish"
+declare "util_name=util"
+declare "util_commands=$UTIL_COMMANDS"
+UTIL_SITE_COMMANDS="bash -ex pushsite.bash"
+declare "utilsite_name=util"
+declare "utilsite_commands=$UTIL_SITE_COMMANDS"
+
+# Scrooge publishes it's projects independently for various reasons (including the sbt-plugin and maven-plugin).
+SCROOGE_COMMANDS="./sbt \"project scrooge-core\" +publishLocal +publishLocal +publish;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLocal +publish;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publish;"
+ # sbt-plugin needs the generator in scala 2.10 and published to m2.
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-generator\" +publishLocal +publishM2 +publish ++2.10.6 publishLocal;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^0.13.16 publishLocal publish publishM2;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.1.4 publishLocal publish publishM2;"
+# We skip javadoc generation due to this issue:
+# https://issues.apache.org/jira/browse/MJAVADOC-382
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}cd scrooge-maven-plugin; mvn -Dmaven.javadoc.skip=true deploy -Psonatype-oss-release; cd ..;"
+declare "scrooge_name=scrooge"
+declare "scrooge_commands=$SCROOGE_COMMANDS"
+SCROOGE_SITE_COMMANDS="sh pushsite.bash"
+declare "scroogesite_name=scrooge"
+declare "scroogesite_commands=$SCROOGE_SITE_COMMANDS"
+
+FINAGLE_COMMANDS="./sbt +publishLocal +publishLocal +publish +publishM2"
+declare "finagle_name=finagle"
+declare "finagle_commands=$FINAGLE_COMMANDS"
+FINAGLE_SITE_COMMANDS="sh pushsite.bash"
+declare "finaglesite_name=finagle"
+declare "finaglesite_commands=$FINAGLE_SITE_COMMANDS"
+
+TWITTER_SERVER_COMMANDS="./sbt +publishLocal +publishLocal +publish"
+declare "twitterserver_name=twitter-server"
+declare "twitterserver_commands=$TWITTER_SERVER_COMMANDS"
+TWITTER_SERVER_SITE_COMMANDS="bash -ex pushsite.bash"
+declare "twitterserversite_name=twitter-server"
+declare "twitterserversite_commands=$TWITTER_SERVER_SITE_COMMANDS"
+
+FINATRA_COMMANDS="./sbt +publishLocal +publish"
+declare "finatra_name=finatra"
+declare "finatra_commands=$FINATRA_COMMANDS"
+FINATRA_SITE_COMMANDS="bash -ex pushsite.bash"
+declare "finatrasite_name=finatra"
+declare "finatrasite_commands=$FINATRA_SITE_COMMANDS"
+
+GITHUB_API_URL="https://api.github.com"
+GITHUB_ACCEPT="Accept: application/vnd.github.v3+json"
+
+# For snapshot cleanup
+SCALA_VERSIONS=( "2.11" "2.12" )
+basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+## To clean up run with "--clean-files" or remove:
+#   $SNAPSHOT_DIRECTORY/caches
+#   $SNAPSHOT_DIRECTORY/clones
+#   $SNAPSHOT_DIRECTORY/builds
+SNAPSHOT_DIRECTORY="$HOME/.snapshot"
+cache_home=$SNAPSHOT_DIRECTORY/caches # only used for informational purposes
+clone_home=$SNAPSHOT_DIRECTORY/clones # we always clone the repository we're releasing, this is merely the local location
+build_home=$SNAPSHOT_DIRECTORY/builds # records releases against a given project
+
+project_list=( "util" "scrooge" "finagle" "twitter-server" "finatra" )
+
+# Initialize defaults
+release=false
+site_release=false
+branch="develop"        # branch from which to release (default: "develop". Is set to "master" when --release is passed)
+build_all=false         # release all projects in the project list (default: false -- perform release of the given project only)
+clean_files=false       # remove caches, e.g., $SNAPSHOT_DIRECTORY/caches, $SNAPSHOT_DIRECTORY/clones, and  $SNAPSHOT_DIRECTORY/builds
+dry_run=false           # output but don't execute the release commands
+verbose=false           # prints build configuration options and other verbose statements
+
+# Retries a command on failure
+# @param $1 - the maximum number of attempts
+# @param $2 - the command to run
+function retry {
+    local max_attempts=$1; shift
+    local cmd=( "$@" )
+    local attempt=1
+
+    until eval "${cmd[*]}"
+    do
+        if (( attempt == max_attempts ))
+        then
+            log "info" "Command failed, max attempts: $max_attempts exceeded."
+            return 1
+        else
+            log "info" "Command failed. Retrying..."
+            ((attempt++))
+            sleep 1
+        fi
+    done
+}
+
+# Note: does not work if the message contains an array
+function log {
+    local severity=$1
+    local message=$2
+    local -r lowercaseSeverity=$(echo "$severity" | awk '{print tolower($0)}')
+    echo "[$lowercaseSeverity] $message"
+}
+
+function contains_project {
+  local element=$1
+  for project in "${project_list[@]}"; do [[ "$project" == "$element" ]] && return 0; done
+  return 1
+}
+
+function array_get { 
+    local array=$1 index=$2
+    local i="${array}_$index"
+    printf '%s' "${!i}"
+}
+
+function check_arg {
+    local arg=$1
+    if [[ $arg == --* ]]; then
+        log "error" "Unrecognized argument: $arg" >&2
+        print_usage >&2
+        exit 1
+    fi
+}
+
+function print_usage {
+    echo "USAGE: $0 --clean-files --release --phab-id D123456 --version 17.12.0 --verbose [project | --all]"
+    echo "Options:
+  --all             Release all projects in the project list. Default: false.
+  --clean-files     Delete all Dodo caches, e.g., $SNAPSHOT_DIRECTORY/caches, $SNAPSHOT_DIRECTORY/clones, 
+                    and $SNAPSHOT_DIRECTORY/builds. Default: false.
+  --clone-dir       Directory into which to clone remotes. Default: $HOME/.release/clones
+  --dry-run         Output, but do not execute the release. Remotes will still be cloned. Default: false.
+  --verbose         Run in verbose mode. Default: false.
+  --help            Print usage."
+}
+
+function set_up {
+
+    if [ ! -d "$cache_home" ]; then
+        mkdir -p "$cache_home"
+    fi
+    if [ ! -d "$clone_home" ]; then
+        mkdir -p "$clone_home"
+    fi
+    if [ ! -d "$build_home" ]; then
+        mkdir -p "$build_home"
+    fi
+}
+
+function release_projects {
+    local project=$1
+    local to_release=()
+
+    if [[ "$build_all" = false ]]; then
+        to_release+=("$project")
+    else
+        for current in "${project_list[@]}"; do
+            to_release+=("$current")
+        done 
+    fi
+
+    # Start release of projects
+    local details=""
+    if [[ "$dry_run" = true ]]; then details=" (dry-run)"; fi
+    if [[ "$build_all" = true ]]; then
+        log "info" "------------------------------------------------------------------------"
+        log "info" "Release Order:$details"
+        printf '[info]   %s\n' "${to_release[@]}"
+        log "info" " "
+    fi
+
+    # Clean ivy/maven state for each project, but only if we haven't yet built a release
+    log "info" "------------------------------------------------------------------------"
+    log "info" " Cleaning ivy & maven local repository caches for release projects"
+    log "info" "------------------------------------------------------------------------"
+    log "info" " "
+    for project in "${to_release[@]}"; do
+        if [[ "$site_release" = false ]] && [[ ! -d $build_home/$project ]]; then
+            clean "$project"
+        fi
+    done
+
+    for project in "${to_release[@]}"; do
+        release "$project"
+        log "info" " "
+    done
+}
+
+function log_release_build {
+    local project=$1
+    local version=$2
+    details="binary release"
+    if [[ "$site_release" = true ]]; then details="site release"; fi
+    log "info" "------------------------------------------------------------------------"
+    log "info" "Releasing $project version: $version ($details)"
+    log "info" "------------------------------------------------------------------------"
+    log "info" " "
+    log "info" "--- git-sha @ $(cat "$cache_home"/"$project") ---"
+    log "info" " "
+}
+
+function delete_snapshots {
+    local sub_project=$1
+    local version=$2
+    local sub_project_name="$sub_project"
+    local sonatype_pass=${SONATYPE_PASSWORD:-XXXXX}
+
+    if [[ "$sub_project" != "scrooge-maven-plugin" ]] && [[ "$sub_project" != "scrooge-sbt-plugin"* ]] && [[ "$sub_project" != "maven-metadata.xml"* ]]; then
+        sub_project_name="${sub_project_name}_${version}"
+    fi
+    local -r delete_curl_cmd="curl -X DELETE -s -o /dev/null -w \"%{http_code}\" -u csl_twitter:$sonatype_pass https://oss.sonatype.org/content/repositories/snapshots/com/twitter/$sub_project_name"
+    log "info" "${delete_curl_cmd//$sonatype_pass/XXXXX}"
+    if [[ "$dry_run" = false ]]; then
+        status_code=$(eval "$delete_curl_cmd")
+        if [[ "$status_code" != "20"* ]] && [[ "$status_code" != "404" ]]; then
+            log "error" "Unable to delete ${sub_project_name}, HTTP status code: ${status_code}"
+            exit 1
+        fi
+    fi
+}
+
+function release {    
+    local project=$1
+    log "info" ""
+    log "info" ""
+    log "info" "------------------------------------------------------------------------"
+    log "info" "Starting $project release..."
+    log "info" "------------------------------------------------------------------------"
+    log "info" ""
+    # Build dependencies
+    build_deps "$project" "$branch"
+    # Clone project
+    clone "$project"
+    local -r version=$(parse_version "$project")
+    log_release_build "$project" "$version"
+    if [[ -f "$build_home/$project/$version" ]]; then
+        # There is a cached release by this version, thus we think we've 
+        # already released this version of the project. No need to run the release
+        log "info" ""
+        log "info" "--- Release previously completed for $project-$version. ---"
+        log "info" ""
+    else
+        # cd into project directory; run commands; cd back
+        (
+            cd "$clone_home/$project"; git checkout "$branch" > /dev/null 2>&1; git pull > /dev/null 2>&1
+            if [[ "$release" = false ]]; then
+                log "info" "--- Cleaning up previous release snapshots for $project ---"
+                while read -r sub_project; do
+                    for scala_version in "${SCALA_VERSIONS[@]}"; do
+                        # also delete inject-* libraries when releasing finatra
+                        if [[ "$sub_project" == "$project"* ]] || ([[ "$project" = "finatra" ]] && [[ "$sub_project" == "inject"* ]]); then
+                            delete_snapshots "$sub_project" "$scala_version"
+                        fi
+                    done
+                    if [[ "$sub_project" == "$project"* ]] && [[ "$sub_project" = "scrooge-generator" ]]; then
+                        # also delete 2.10 version of scrooge-generator
+                        delete_snapshots "$sub_project" "2.10"
+                    fi
+                done <"$basedir/projects.txt"
+                log "info" ""
+            fi
+            # Run commands
+            log "info" "--- Running release commands ---"
+            log "info" ""
+            run_commands "$(array_get "${project//-/}" commands)"
+            record_release "$project" "$version"
+        )
+    fi 
+}
+
+function clean {
+    printf "[info] --- Cleaning previous release state for %s..." "$project"
+    # ivy (sbt)
+    rm -fr "${IVY_TEMP_DIR}cache/com.twitter/$project"-*
+    # ivy (pants)
+    rm -fr "${IVY_TEMP_DIR}local/com.twitter/$project"-*
+    # maven
+    rm -fr ~/.m2/repository/com/twitter/"$project"-*
+    printf 'done.\n'
+    log "info" ""
+}
+
+ # clean ivy cache -- prevents using any previously resolved dependency over a locally built version.
+function clean_ivy {
+    local project=$1
+    local to_delete=()
+    
+    for current in "${project_list[@]}"; do
+        if [ "$current" = "$project" ]; then
+            break
+        else
+            to_delete+=("$current")
+        fi
+    done
+    to_delete+=("$project")
+    for artifact in "${to_delete[@]}"; do
+        local artifact_base="${IVY_TEMP_DIR:?}/cache/com.twitter/${artifact}"
+        log "info" "Removing ivy resolution cache ${artifact_base}"
+        if [[ "$dry_run" != true ]]; then
+            rm -fr "${artifact_base}"* > /dev/null 2>&1
+        fi
+    done
+}
+
+function clone {
+    # Always re-clone and attempt to merge the latest SHA. If "release = true" this is using 'master' github branch and needs 
+    # commits from 'develop' merged in, otherwise this is a snapshot release which is against the 'develop' branch.
+    cd "$clone_home"
+    # clean-up
+    rm -fr "${clone_home:?}/$project"
+    log "info" "------------------------------------------------------------------------"
+    log "info" "Cloning $branch branch for repository: $project"
+    log "info" "------------------------------------------------------------------------"
+    log "info" ""
+    printf "[info] Cloning..."
+    git clone git@github.com:twitter/"$project".git --branch "$branch" > /dev/null 2>&1
+    printf "done.\\n"
+    log "info" ""
+        
+    cd "$project"
+    git checkout "$branch" > /dev/null 2>&1; git pull > /dev/null 2>&1
+    # pull the latest commit from the repo
+    log "info" "Using latest commit SHA in $project $branch branch"
+    local -r sha=$(curl -s https://api.github.com/repos/twitter/"$project"/commits | jq '.[0].sha' | sed 's/\"//g')
+    local -r commit_message=$(curl -s https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.message' | sed 's/\`//g' | sed 's/\\n.*//' | sed 's/\"//g')
+    local -r author=$(curl -s https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.author.name' | sed 's/\"//g')
+    log "info" "Commit SHA: $project @ $sha"
+    log "info" "Commit message: $commit_message"
+    log "info" "Commit author: $author"
+
+    # Simply record the latest SHA for information purposes. This is shown in the "releasing" message.
+    record_latest_sha "$project"
+    log "info" " "
+    cd "$clone_home"
+}
+
+function parse_version {
+    cd "$clone_home/$project"
+    sed -n 's/val releaseVersion = "\(.*\)"/\1/p' build.sbt
+}
+
+function build_deps {
+    log "info" "------------------------------------------------------------------------"
+    log "info" "Building dependencies for $project"
+    log "info" "------------------------------------------------------------------------"
+    if [[ "$dry_run" = false ]]; then
+        ./$basedir/build --no-test --clean --branch "$branch" "$project"
+    else
+        log "info" ""
+        log "info" "--- (dry run) project: $project; branch: $branch ---"
+        log "info" ""
+    fi
+}
+
+function run_commands {
+    local commands=$1
+    IFS=';' read -ra commandsArray <<< "$commands"
+    for command in "${commandsArray[@]}"; do
+        if [[ "$verbose" = false ]]; then
+            command="${command//.\/sbt /./sbt --warn }" # set sbt log level to warn
+        fi
+        log "info" "$command"
+        if [[ "$dry_run" = false ]]; then 
+            retry 2 "$command"
+        fi
+    done
+}
+
+function record_release {
+    if [[  ! -f "$build_home/$project" ]]; then mkdir -p  "$build_home/$project"; fi
+    if [[ "$dry_run" = false ]]; then      
+        # record timestamp
+        date "+%H:%M:%S %m/%d/%y" > "$build_home/$project/$version"
+    fi
+}
+
+function record_latest_sha {
+    local project=$1
+    ## store the lastest SHA
+    git rev-parse "$branch" > "$cache_home/$project"
+}
+
+# SET SBT_OPTS ------------------------------------------------------------------------------------------
+IVY_TEMP_DIR="$HOME/.ivy2/"
+if [[ "$release" = false ]] && [[ "$site_release" == false ]]; then
+    PREV_REV="$(date -v -1d +%y-%m-%d)"
+    rm -fr "/tmp/.ivy2/${PREV_REV}-release/"
+    IVY_TEMP_DIR="/tmp/.ivy2/$(date +%y-%m-%d)-release/"
+    rm -fr "$IVY_TEMP_DIR"; mkdir -p "$IVY_TEMP_DIR"
+fi
+export SBT_OPTS="-DSKIP_FLAKY=true -Dsbt.log.noformat=true -Divy.home=${IVY_TEMP_DIR} -Dsbt.ivy.home=${IVY_TEMP_DIR}"
+
+# BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
+# Simple option parsing. We could use getopts but rather use "long"
+# names only. And this is position-agnostic to the options, e.g.,
+# these options can occur before or after the main arguments.
+shift_count="0"
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--all")            build_all=true ;;
+    "--clean-files")    clean_files=true ;;
+    "--clone-dir")      clone_home=$1; ((shift_count+=1)) ;;
+    "--dry-run")        dry_run=true ;;
+    "--verbose")        verbose=true ;;
+    "--help")           print_usage >&2; exit ;;
+    *)                  check_arg $arg;set -- "$@" "$arg"
+  esac
+done
+# read and validate $project
+project="unset"
+if [[ "$build_all" = false ]]; then
+    if [[ -z "$*" ]]; then print_usage >&2; exit 1; fi
+     # need to shift by the number of params set above with values
+    if [[ "$shift_count" != "0" ]]; then shift $shift_count; fi
+    # Read in remaining option -- which should be the project name.
+    project="$1"
+    if ! contains_project "$project"; then
+        log "error" "Project must be one of: \"${project_list[*]}\"" >&2
+        print_usage >&2
+        exit 1
+    fi
+fi
+
+if [[ "$verbose" = true ]]; then
+    log "debug" "------------------------------------------------------------------------"
+    log "debug" "  dry-run    = ${dry_run}"
+    log "debug" "  ivy_home   = ${IVY_TEMP_DIR}"
+    log "debug" "  clone_home = ${clone_home}"
+    log "debug" "  cache_home = ${cache_home}"
+    log "debug" "  build_home = ${build_home}"
+    log "debug" ""
+fi
+# BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
+SECONDS=0
+set_up
+log "info" "------------------------------------------------------------------------"
+log "info" "SNAPSHOT RELEASE ($branch)"
+release_projects "$project"
+
+if [[ "$release" = false ]] && [[ "$site_release" = false ]]; then
+    # snapshot releases are pushing these files loose into the directory -- not clear why
+    delete_snapshots "maven-metadata.xml" ""
+    delete_snapshots "maven-metadata.xml.md5" ""
+    delete_snapshots "maven-metadata.xml.sha1" ""
+fi
+
+duration="$SECONDS"
+FORMATTED=$(date "+%YT%H:%M:%S%z")
+log "info" "------------------------------------------------------------------------"
+log "info" "RELEASE SUCCESS"
+log "info" "------------------------------------------------------------------------"
+log "info" "Total time: $duration s"
+log "info" "Finished at: $FORMATTED"
+log "info" "------------------------------------------------------------------------"
+# END: EXECUTE BUILD ------------------------------------------------------------------------------------
