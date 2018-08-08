@@ -70,6 +70,7 @@ SNAPSHOT_DIRECTORY="$HOME/.snapshot"
 cache_home=$SNAPSHOT_DIRECTORY/caches # only used for informational purposes
 clone_home=$SNAPSHOT_DIRECTORY/clones # we always clone the repository we're releasing, this is merely the local location
 build_home=$SNAPSHOT_DIRECTORY/builds # records releases against a given project
+sonatype_dir="$HOME/.sbt/1.0/"
 
 project_list=( "util" "scrooge" "finagle" "twitter-server" "finatra" )
 
@@ -156,6 +157,11 @@ function set_up {
     if [ ! -d "$build_home" ]; then
         mkdir -p "$build_home"
     fi
+
+    if [ ! -d "$sonatype_dir" ]; then
+        mkdir -p "$sonatype_dir"
+    fi
+    mv sonatype.sbt $sonatype_dir
 }
 
 function release_projects {
