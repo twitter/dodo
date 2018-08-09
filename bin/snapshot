@@ -71,6 +71,7 @@ cache_home=$SNAPSHOT_DIRECTORY/caches # only used for informational purposes
 clone_home=$SNAPSHOT_DIRECTORY/clones # we always clone the repository we're releasing, this is merely the local location
 build_home=$SNAPSHOT_DIRECTORY/builds # records releases against a given project
 sonatype_dir="$HOME/.sbt/1.0/"
+sbt_plugins_dir="$HOME/.sbt/1.0/plugins/"
 
 project_list=( "util" "scrooge" "finagle" "twitter-server" "finatra" )
 
@@ -161,7 +162,11 @@ function set_up {
     if [ ! -d "$sonatype_dir" ]; then
         mkdir -p "$sonatype_dir"
     fi
+    if [! -d "$sbt_plugins_dir" ]; then
+        mkdir -p "$sbt_plugins_dir"
+    fi
     mv sonatype.sbt $sonatype_dir
+    echo 'addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.1")' > "$sbt_plugins_dir/gpg.sbt"
 }
 
 function release_projects {
