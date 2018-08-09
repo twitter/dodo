@@ -162,7 +162,7 @@ function set_up {
     if [ ! -d "$sonatype_dir" ]; then
         mkdir -p "$sonatype_dir"
     fi
-    if [! -d "$sbt_plugins_dir" ]; then
+    if [ ! -d "$sbt_plugins_dir" ]; then
         mkdir -p "$sbt_plugins_dir"
     fi
     mv sonatype.sbt $sonatype_dir
