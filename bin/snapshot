@@ -225,7 +225,7 @@ function delete_snapshots {
     if [[ "$sub_project" != "scrooge-maven-plugin" ]] && [[ "$sub_project" != "scrooge-sbt-plugin"* ]] && [[ "$sub_project" != "maven-metadata.xml"* ]]; then
         sub_project_name="${sub_project_name}_${version}"
     fi
-    local -r delete_curl_cmd="curl -X DELETE -s -o /dev/null -w \"%{http_code}\" -u csl_twitter:$sonatype_pass https://oss.sonatype.org/content/repositories/snapshots/com/twitter/$sub_project_name"
+    local -r delete_curl_cmd="curl -X DELETE -s -S -o /dev/null -w \"%{http_code}\" -u csl_twitter:$sonatype_pass https://oss.sonatype.org/content/repositories/snapshots/com/twitter/$sub_project_name"
     log "info" "${delete_curl_cmd//$sonatype_pass/XXXXX}"
     if [[ "$dry_run" = false ]]; then
         status_code=$(eval "$delete_curl_cmd")
@@ -330,7 +330,7 @@ function clone {
     log "info" "------------------------------------------------------------------------"
     log "info" ""
     printf "[info] Cloning..."
-    git clone git@github.com:twitter/"$project".git --branch "$branch" > /dev/null 2>&1
+    git clone https://github.com/twitter/"$project".git --branch "$branch" > /dev/null 2>&1
     printf "done.\\n"
     log "info" ""
         
@@ -338,9 +338,9 @@ function clone {
     git checkout "$branch" > /dev/null 2>&1; git pull > /dev/null 2>&1
     # pull the latest commit from the repo
     log "info" "Using latest commit SHA in $project $branch branch"
-    local -r sha=$(curl -s https://api.github.com/repos/twitter/"$project"/commits | jq '.[0].sha' | sed 's/\"//g')
-    local -r commit_message=$(curl -s https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.message' | sed 's/\`//g' | sed 's/\\n.*//' | sed 's/\"//g')
-    local -r author=$(curl -s https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.author.name' | sed 's/\"//g')
+    local -r sha=$(curl -s -S https://api.github.com/repos/twitter/"$project"/commits | jq '.[0].sha' | sed 's/\"//g')
+    local -r commit_message=$(curl -s -S https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.message' | sed 's/\`//g' | sed 's/\\n.*//' | sed 's/\"//g')
+    local -r author=$(curl -s -S https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.author.name' | sed 's/\"//g')
     log "info" "Commit SHA: $project @ $sha"
     log "info" "Commit message: $commit_message"
     log "info" "Commit author: $author"
