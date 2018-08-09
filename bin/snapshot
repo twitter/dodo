@@ -400,7 +400,7 @@ function record_latest_sha {
 # SET SBT_OPTS ------------------------------------------------------------------------------------------
 IVY_TEMP_DIR="$HOME/.ivy2/"
 if [[ "$release" = false ]] && [[ "$site_release" == false ]]; then
-    PREV_REV="$(date -v -1d +%y-%m-%d)"
+    PREV_REV="$(date --date='1 day ago' +%y-%m-%d)"
     rm -fr "/tmp/.ivy2/${PREV_REV}-release/"
     IVY_TEMP_DIR="/tmp/.ivy2/$(date +%y-%m-%d)-release/"
     rm -fr "$IVY_TEMP_DIR"; mkdir -p "$IVY_TEMP_DIR"
