@@ -361,7 +361,7 @@ function build_deps {
     log "info" "Building dependencies for $project"
     log "info" "------------------------------------------------------------------------"
     if [[ "$dry_run" = false ]]; then
-        ./$basedir/build --no-test --clean --branch "$branch" "$project"
+        $basedir/build --no-test --clean --branch "$branch" "$project"
     else
         log "info" ""
         log "info" "--- (dry run) project: $project; branch: $branch ---"
