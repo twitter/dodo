@@ -3,6 +3,9 @@ scala:
 - 2.11.8
 jdk:
 - oraclejdk8
+cache:
+  directories:
+    - $HOME/.snapshot
 env:
   global:
   - secure: "jI3C6ktz8N9gRSYhYN3QTdHsTOJSURAesQMFWSSIDB6dXZ3Wr80ydzsBOXn51W35+pseyKAbRC2xREV350Rnove/Zc9bhLxhmaT9JoP8+tAdTP3teH0kVjMzYwzjcqO7VoNkJix0mq9ixMX/z6IunY9xc26EfjHY0z9Ak3xmTybfL8oU+1dXsKE21cl7tCnuK8CdNdIMZYiguhIB1fMc8d51dVe06wYTcNnqnUu1Uq0XfwYl4GrZiqLy/Ht2LJ5byi5mKAY5MiIGq53ryGU4nAMQCb1ZcnmEItQ4/DpCxJWHLBAUmu4qpyVKk/0kR7HONJQIvcm7cxJM42OKngmsESS5GF2W/szaAlqRPAsdRYgwz4lh+8Bxz2n+AQ7uIBdgHrXnJZvA8uP7yXqMe1CBOMscEcddOznDq/K9sNAQER9o7PF80PM14IE2WTQ9GoIjkUTAgzw8MtQjgstiVO0j+j1vNYIfv3gCohNkVf0MrBLeIOTSae0t56s6UNEd8uuzZ4Ea7ytmoyuiPABx/G3tbuLy3JYp8TbGF0TEau6cwSNCZOAGaC99bTUuHVisMNUvGVDo6UOwEOwHhMe/BKcsuIbqOXqyfcd/LSmdctumMR/HX7uRAWiGbglo7GrCh0YcotA1fX/YraSA0qhg2xeqfbLJ27LW1Y94Dz44G8OiGp0="
@@ -19,4 +22,4 @@ before_script:
 - unset SBT_OPTS
 - chmod +x ./bin/snapshot
 script:
-- "./bin/snapshot $PROJECT"
+- travis_retry ./bin/snapshot $PROJECT
