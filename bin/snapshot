@@ -226,12 +226,12 @@ function delete_snapshots {
     local version=$2
     local sub_project_name="$sub_project"
     local sonatype_pass=${SONATYPE_PASSWORD:-XXXXX}
+    local sonatype_user=${SONATYPE_USER:-XXXXX}
 
     if [[ "$sub_project" != "scrooge-maven-plugin" ]] && [[ "$sub_project" != "scrooge-sbt-plugin"* ]] && [[ "$sub_project" != "maven-metadata.xml"* ]]; then
         sub_project_name="${sub_project_name}_${version}"
     fi
-    local -r delete_curl_cmd="curl -X DELETE -s -S -o /dev/null -w \"%{http_code}\" -u csl_twitter:$sonatype_pass https://oss.sonatype.org/content/repositories/snapshots/com/twitter/$sub_project_name"
-    log "info" "${delete_curl_cmd//$sonatype_pass/XXXXX}"
+    local -r delete_curl_cmd="curl -X DELETE -s -S -o /dev/null -w \"%{http_code}\" -u $sonatype_user:$sonatype_pass https://oss.sonatype.org/content/repositories/snapshots/com/twitter/$sub_project_name"
     if [[ "$dry_run" = false ]]; then
         status_code=$(eval "$delete_curl_cmd")
         if [[ "$status_code" != "20"* ]] && [[ "$status_code" != "404" ]]; then
@@ -379,7 +379,7 @@ function run_commands {
     IFS=';' read -ra commandsArray <<< "$commands"
     for command in "${commandsArray[@]}"; do
         if [[ "$verbose" = false ]]; then
-            command="${command//.\/sbt /./sbt --warn }" # set sbt log level to warn
+            command="${command//.\/sbt /./sbt --error }" # set sbt log level to warn
         fi
         log "info" "$command"
         if [[ "$dry_run" = false ]]; then 
