@@ -191,10 +191,10 @@ function run_commands {
                 commands="${commands//$publish_to_replace/+publishLocal +publishM2}"
             fi
         fi
-        # run sbt update (resolve dependencies)
-        sbt_update
         # clean ivy caches
         clean_ivy "$project"
+        # run sbt update (resolve dependencies)
+        sbt_update
         # add "sbt clean" to commands
         if [[ "$clean" == true ]]; then
             commands="$SBT_CLEAN_COMMAND;$commands"
