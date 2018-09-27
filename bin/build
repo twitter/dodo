@@ -221,6 +221,10 @@ function run_commands {
                 retry 3 "$command"
             fi
         done
+        # clean the project since we publish artifacts we do not need to keep classes and other detritus
+        if [[ "$dry_run" != true ]]; then 
+            retry 3 "./sbt clean cleanFiles"
+        fi
         record_build "$project" "$commands_hash"
     else
         log "info" "Using previously built results..."
