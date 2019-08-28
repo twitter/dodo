@@ -36,7 +36,7 @@ declare "finatra_name=finatra"
 declare "finatra_commands=$FINATRA_COMMANDS"
 
 # Try to resolve sbt dependencies, useful for flaky repositories.
-SBT_UPDATE_COMMAND="./sbt update"
+SBT_UPDATE_COMMAND="./sbt +update"
 # Run sbt clean
 SBT_CLEAN_COMMAND="./sbt clean"
 
@@ -145,6 +145,11 @@ function sbt_update {
     update_command="$SBT_UPDATE_COMMAND"
     if [[ "$verbose" != true ]]; then
         update_command="${update_command//.\/sbt /./sbt --warn }" # set sbt log level to warn
+    fi
+    if [[ -n "$scala_version" ]]; then
+        # if we were passed a scala version and the command doesn't already explicity set a scala nor sbt version
+        update_command="${update_command//+/}" # remove + for cross-compile
+        update_command="${update_command//.\/sbt /./sbt ++$scala_version }" # add scala version
     fi
     # if we're offline we need to deal with the sbt-launch jar.
     if [[ "$offline" = true ]]; then
