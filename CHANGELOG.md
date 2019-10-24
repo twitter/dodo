@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. Note that `
 
 ## [Unreleased]
 
+### Added 
+* dodo - Add initial support for JDK 11 compatibility. 
+  Update SBT and Scala versions to be JDK 11 compatible
+  ``PHAB_ID=D365075``
+
 ### Added
 
 * dodo - Clean the ivy cache (~/.ivy2/cache/com.twitter) of any twitter-oss

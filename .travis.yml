@@ -6,6 +6,7 @@ scala:
 
 jdk:
   - openjdk8
+  - openjdk11
 
 before_script:
   # See https://docs.travis-ci.com/user/encrypting-files/#automated-encryption
