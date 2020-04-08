@@ -212,7 +212,9 @@ function run_commands {
         IFS=';' read -ra commandsArray <<< "$commands"
         for command in "${commandsArray[@]}"; do
             if [[ -n "$scala_version" ]]; then
-                if [[ $command != *"++"* ]] && [[ $command != *"^^"* ]]; then
+                # We have to exclude scrooge-generator/publishLocal commands because we need the correct
+                # version for the sbt plugin and that need not be the same version as the rest of the build.
+                if [[ $command != *"++"* ]] && [[ $command != *"^^"* ]] && [[ $command != *"scrooge-generator/publishLocal" ]]; then
                     # if we were passed a scala version and the command doesn't already explicity set a scala nor sbt version
                     command="${command//+/}" # remove + for cross-compile
                     command="${command//.\/sbt /./sbt ++$scala_version }" # add scala version
