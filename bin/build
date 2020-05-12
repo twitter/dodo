@@ -1,16 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
+# shellcheck source=src/lib.sh
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
+
 #######################################################################
 # Script for building Twitter OSS libraries based on either their 
 # Github source or from locally checked out copies.
 #
-# See: print_usage function for usage
+# See: print_usage function for usage.
 #######################################################################
 VERSION="20.4.1"
-NAME="Dodo"
+NAME="Dodo Build"
 
-UTIL_COMMANDS="./sbt +test:compile +publishLocal; ./sbt ++2.11.12 util-intellij/publishLocal"
+UTIL_COMMANDS="./sbt +test:compile +publishLocal;./sbt ++2.11.12 util-intellij/publishLocal"
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
@@ -77,53 +80,11 @@ branch="develop"        # branch to clone for all libraries when building projec
 publish_m2=false        # also publish to the local ~/.m2 repository
 clean_files=false       # remove caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, $DODO_DIRECTORY/builds.
 
-# Retries a command on failure
-# @param $1 - the maximum number of attempts
-# @param $2 - the command to run
-function retry {
-    local max_attempts=$1; shift
-    local cmd=( "$@" )
-    local attempt=1
-
-    until eval "$cmd"
-    do
-        if (( attempt == max_attempts ))
-        then
-            log "info" "Command failed, max attempts: $max_attempts exceeded."
-            return 1
-        else
-            log "info" "Command failed. Retrying..."
-            ((attempt++))
-            sleep 1
-        fi
-    done
-}
-
-# Note: does not work if the message contains an array
-function log {
-    local severity=$1
-    local message=$2
-    local lowercaseSeverity=$(echo "$severity" | awk '{print tolower($0)}')
-    echo "[$lowercaseSeverity] $message"
-}
-
-function contains_project {
-  local element=$1
-  for project in "${project_list[@]}"; do [[ "$project" == "$element" ]] && return 0; done
-  return 1
-}
-
-function array_get { 
-    local array=$1 index=$2
-    local i="${array}_$index"
-    printf '%s' "${!i}"
-}
-
  # clean ivy cache -- prevents using any previously resolved dependency over a locally built version.
 function clean_ivy {
     local project=$1
     local to_delete=()
-    
+
     for current in "${project_list[@]}"; do
         if [ "$current" = "$project" ]; then
             break
@@ -133,11 +94,16 @@ function clean_ivy {
     done
     to_delete+=("$project")
     for artifact in "${to_delete[@]}"; do
-        local artifact_base="${ivy_home:?}/cache/com.twitter/${artifact}"
-        log "info" "Removing ivy resolution cache ${artifact_base}"
-        if [[ "$dry_run" != true ]]; then
-            rm -fr ${artifact_base}* > /dev/null 2>&1
-        fi
+        dirs=("$ivy_home"/cache/com.twitter/"$artifact"*)
+        for d in ${dirs[*]}; do
+          if [[ -d "$d" ]]; then
+            clean_ivy_command="rm -f $d > /dev/null 2>&1"
+            log "info" "$clean_ivy_command"
+            if [[ "$dry_run" != true ]]; then
+              "$clean_ivy_command"
+            fi
+          fi
+        done
     done
 }
 
@@ -279,7 +245,7 @@ function clone {
         else
             cd "$clone_home/$project_name"
             # are we in the branch we expect? 
-            local local_branch=$(git rev-parse --abbrev-ref HEAD)
+            local -r local_branch=$(git rev-parse --abbrev-ref HEAD)
             if [[ "$local_branch" != "$branch" ]]; then
                 # need to re-clone with correct branch
                 log "info" "Requested branch: $branch is different than cached cloned branch: $local_branch. Deleting clone and re-cloning branch $branch."    
@@ -308,13 +274,13 @@ function clone {
 
 function build {    
     local project=$1
-    local project_name="$(array_get ${project//-/} name)"
+    local -r project_name=$(array_get "${project//-/}" name)
     clone "$project_name"
     # cd into project directory; run commands; cd back
     cd "$project_name"
     
     details="local"
-    if [[ "$remote" = true ]]; then details="git-sha @ $(cat $cache_home/$project_name)"; fi
+    if [[ "$remote" = true ]]; then details="git-sha @ $(cat "$cache_home/$project_name")"; fi
     log "info" "------------------------------------------------------------------------"
     log "info" "Building $project ($branch)"
     log "info" "------------------------------------------------------------------------"
@@ -327,7 +293,7 @@ function build {
         rm -f sbt-launch.jar > /dev/null 2>&1
         printf 'done.\n'
     fi
-    run_commands "$project" "$project_name" "$(array_get ${project//-/} commands)"
+    run_commands "$project" "$project_name" "$(array_get "${project//-/}" commands)"
     cd - > /dev/null 2>&1
 }
 
@@ -420,7 +386,8 @@ function print_usage {
     echo "USAGE: $0 --local --no-test --include --scala-version 2.12.4 <project>"
     echo "Options:
   --all             Build all projects in the DAG list (overrides --include). Default: false.
-  --clean           Delete any sbt-launch.jar and run \"sbt clean\" before running other sbt commands. Default: false.
+  --clean           Delete any sbt-launch.jar and run \"sbt clean\" before running other sbt commands.
+                    Default: false.
   --clean-files     Delete all $NAME caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, 
                     and $DODO_DIRECTORY/builds. Default: false.
   --include         Include building of the given project. Default: false.
@@ -436,21 +403,15 @@ function print_usage {
                     Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set 
                     --local and --sbt-version with this option. Default: unset.
   --publish-m2      Also publish artifacts to the local ~/.m2 repository. Default: false.
-  --sbt-version     The sbt version to use when downloading the sbt launch jar. Default: unset.
+  --sbt-version     The sbt version to use when downloading the sbt launch jar.
+                    Default: unset, the project defined sbt version will used.
   --dry-run         Output, but do not execute the sbt build commands. If using remotes
                     they will still be cloned. Default: false.
   --verbose         Run in verbose mode. Default: false.
   --trace           Run in trace mode. Note: extremely verbose. Default: false.
-  --help            Print usage."
-}
-
-function check_arg {
-    local arg=$1
-    if [[ $arg == --* ]]; then
-        log "error" "Unrecognized argument: $arg" >&2
-        print_usage >&2
-        exit 1
-    fi
+  --help            Print usage.
+  project           [OPTIONAL] Individual project for which to build all dependencies. Must be one of: ${project_list[*]}.
+                    Optional if '--all' is passed. Required otherwise."
 }
 
 function echo_set_options {
@@ -458,15 +419,20 @@ function echo_set_options {
         log "debug" "------------------------------------------------------------------------"
         git_sha=$(git rev-parse HEAD)
         current_date=$(date "+%YT%H:%M:%S%z")
-        log "debug" "Twitter $NAME $VERSION ($git_sha; $current_date)"
+        log "debug" "Twitter $NAME v$VERSION ($git_sha; $current_date)"
         log "debug" ""
         log "debug" "--- java version ---"
-        version=$(java -version 2>&1); version_lines=$(echo "$(java -version 2>&1)" | wc -l)     
+        version=$(java -version 2>&1); version_lines=$(echo java -version 2>&1 | wc -l)
         i=1; while [ "$i" -le "$version_lines" ]; do
             line=$(echo "$version" | head -n $i | tail -n 1)
             log "debug" "  $line"
-            i=$(($i + 1))
+            i=$((i + 1))
         done
+        log "debug" ""
+        log "debug" "--- env ---"
+        log "debug" "  sbt opts = $SBT_OPTS"
+        log "debug" "  workspace = $WORKSPACE"
+        log "debug" "  ivy_home = $ivy_home"
         log "debug" ""
         log "debug" "--- options ---"
         log "debug" "  clone remotes: $remote"
@@ -488,10 +454,10 @@ function echo_set_options {
 
 # BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
 # check for openssl installed -- used for hashing build commands
-openssl_installed=$(which openssl)
+openssl_installed=$(command -v openssl)
 if [[ -z "$openssl_installed" ]]; then log "error" "OpenSSL required to run. Please install. On mac OSX, \"brew install openssl\" " >&2; exit 1; fi
 # check options
-if [[ -z "$@" ]]; then print_usage >&2; exit 1; fi
+if [[ -z "$*" ]]; then print_usage >&2; exit 1; fi
 # Simple option parsing. We could use getopts but rather use "long"
 # names only. And this is position-agnostic to the options, e.g.,
 # these options can occur before or after the main arguments.
@@ -532,13 +498,13 @@ fi
 # read and validate $project
 project="unset"
 if [[ "$build_all" != true ]]; then
-    if [[ -z "$@" ]]; then print_usage >&2; exit 1; fi
+    if [[ -z "$*" ]]; then print_usage >&2; exit 1; fi
      # need to shift by the number of params set above with values
     if [[ "$shift_count" != "0" ]]; then shift $shift_count; fi
     # Read in remaining option -- which should be the project name.
     project="$1"
     if ! contains_project "$project"; then
-        log "error" "Project must be one of: \"${project_list[*]}\"" >&2
+        log "error" "Project must be one of: ${project_list[*]}" >&2
         print_usage >&2
         exit 1
     fi

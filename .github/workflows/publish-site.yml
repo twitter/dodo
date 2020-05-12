@@ -1,0 +1,94 @@
+name: site-publish
+
+# Publishes Github Site Pages for twitter/util, twitter/scrooge, twitter/finagle,
+# twitter/twitter-server, and twitter/finatra
+#
+# Expects a repository dispatch event: https://developer.github.com/v3/repos/#create-a-repository-dispatch-event
+# in the form of JSON data POST to /repos/twitter/dodo/dispatches:
+#
+# {
+#  "event_type": "publish-site",
+#  "client_payload": {
+#    "dry_run": true
+#  }
+# }
+env:
+  JAVA_OPTS: "-Dsbt.log.noformat=true"
+defaults:
+  run:
+    shell: bash
+on:
+  repository_dispatch:
+    types: [publish-site]
+
+jobs:
+  publish-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - uses: olafurpg/setup-scala@v7
+        with:
+          java-version: openjdk@1.8
+      # publish util site
+      - name: checkout/util
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/util
+          fetch-depth: 3
+          ref: master
+          path: util
+      - name: publish/util
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: bash -ex pushsite.bash
+        working-directory: ${{ github.workspace }}/util
+      # publish scrooge site
+      - name: checkout/scrooge
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/scrooge
+          fetch-depth: 3
+          ref: master
+          path: scrooge
+      - name: publish/scrooge
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: sh pushsite.bash
+        working-directory: ${{ github.workspace }}/scrooge
+      # publish finagle site
+      - name: checkout/finagle
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/finagle
+          fetch-depth: 3
+          ref: master
+          path: finagle
+      - name: publish/finagle
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: sh pushsite.bash
+        working-directory: ${{ github.workspace }}/finagle
+      # publish twitter-server site
+      - name: checkout/twitter-server
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/twitter-server
+          fetch-depth: 3
+          ref: master
+          path: twitter-server
+      - name: publish/twitter-server
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: bash -ex pushsite.bash
+        working-directory: ${{ github.workspace }}/twitter-server
+      # publish finatra site
+      - name: checkout/finatra
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/finatra
+          fetch-depth: 3
+          ref: master
+          path: finatra
+      - name: publish/finatra
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: bash -ex pushsite.bash
+        working-directory: ${{ github.workspace }}/finatra

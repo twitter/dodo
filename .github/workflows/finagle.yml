@@ -1,0 +1,77 @@
+name: release-finagle
+
+# Publishes twitter/finagle.
+#
+# Expects a repository dispatch event: https://developer.github.com/v3/repos/#create-a-repository-dispatch-event
+# in the form of JSON data POST to /repos/twitter/dodo/dispatches:
+# {
+#   "event_type": "release_finagle",
+#   "client_payload": {
+#     "phab_id": "D12345",
+#     "version": "17.12.0",
+#     "dry_run": true
+#   }
+# }
+env:
+  JAVA_OPTS: "-Dsbt.log.noformat=true"
+  PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+  PGP_SECRET: ${{ secrets.PGP_SECRET }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+  BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
+  DRY_RUN: " "
+defaults:
+  run:
+    shell: bash
+on:
+  repository_dispatch:
+    types: [release_finagle]
+
+jobs:
+  release_finagle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - uses: olafurpg/setup-scala@v7
+        with:
+          java-version: openjdk@1.8
+      - uses: olafurpg/setup-gpg@v2
+      - name: setup/sbt
+        run: |
+          mkdir -p ~/.sbt/1.0/plugins
+          echo 'resolvers += Classpaths.sbtPluginReleases' > ~/.sbt/1.0/plugins/gpg.sbt
+          echo 'addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")' >> ~/.sbt/1.0/plugins/gpg.sbt
+      # ensure upstreams have merged develop branch into master
+      - name: merge/util
+        run: |
+          ${{ github.workspace }}/bin/merge --phab-id ${{ github.event.client_payload.phab_id }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose util
+      - name: merge/scrooge
+        run: |
+          ${{ github.workspace }}/bin/merge --phab-id ${{ github.event.client_payload.phab_id }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge
+      # run dodo to build finagle dependencies
+      - name: dodo/build
+        uses: cacoco/dodo-build@v2
+        with:
+          branch: master
+          project: finagle
+          no-test: true
+          publish-m2: true
+          verbose: true
+          dry-run: ${{ github.event.client_payload.dry_run }}
+      # checkout finagle and release
+      - name: checkout/finagle
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/finagle
+          ref: master
+          path: finagle
+      - name: release/finagle
+        needs: checkout/finagle
+        run: |
+          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle
+        working-directory: ${{ github.workspace }}/finagle

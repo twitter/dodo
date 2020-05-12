@@ -1,0 +1,120 @@
+#!/bin/bash
+set -euo pipefail
+
+# shellcheck source=src/lib.sh
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
+
+#######################################################################
+# Script for ensuring the master branch of the given project's dependencies
+# have all been merged with their respective develop branch..
+#
+# See: print_usage function for usage.
+#######################################################################
+VERSION="20.4.1"
+NAME="Dodo Merge Branch"
+
+# Validation project list
+project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" )
+
+# Initialize defaults
+phab_id=""              # Differential ID to use as the criteria for finding the pre-release commit in the Github repository.
+dry_run=false           # output but don't execute the release commands
+verbose=false           # prints build configuration options and other verbose statements
+trace=false             # set -x
+
+function print_usage {
+    echo "USAGE: $0 --phab-id D123456 --verbose <project>"
+    echo "Options:
+  --phab-id         Differential ID to use as the criteria for finding the pre-release commit in the develop branch.
+  --dry-run         Output, but do not execute the release. Remotes will still be cloned. Default: false.
+  --verbose         Run in verbose mode. Default: false.
+  --trace           Run in trace mode. Note: extremely verbose. Default: false.
+  --help            Print usage.
+  project           [REQUIRED] Project to merge. Must be one of: ${project_list[*]}."
+}
+
+function merge {
+  merge_master
+}
+
+function echo_set_options {
+    if [[ "$verbose" = true ]]; then
+        log "debug" "------------------------------------------------------------------------"
+        current_date=$(date "+%YT%H:%M:%S%z")
+        log "debug" "Twitter $NAME v$VERSION ($current_date)"
+        log "debug" ""
+        log "debug" "--- java version ---"
+        version=$(java -version 2>&1); version_lines=$(echo java -version 2>&1 | wc -l)
+        i=1; while [ "$i" -le "$version_lines" ]; do
+            line=$(echo "$version" | head -n $i | tail -n 1)
+            log "debug" "  $line"
+            i=$((i + 1))
+        done
+        log "debug" ""
+        log "debug" "--- env ---"
+        log "debug" "  workspace = $WORKSPACE"
+        log "debug" "  ci = ${CI:-false}"
+        log "debug" ""
+        log "debug" "--- options ---"
+        log "debug" "  project  = $project"
+        log "debug" "  phab-id  = $phab_id"
+        log "debug" "  dry-run   = ${dry_run}"
+        log "debug" ""
+    fi
+}
+
+# BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
+# Simple option parsing. We could use getopts but rather use "long"
+# names only. And this is position-agnostic to the options, e.g.,
+# these options can occur before or after the main arguments.
+shift_count="0"
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--phab-id")        phab_id=$1; ((shift_count+=1)) ;;
+    "--dry-run")        dry_run_input=$1; ((shift_count+=1)) ;;
+    "--verbose")        verbose=true ;;
+    "--trace")          trace=true ;;
+    "--help")           print_usage >&2; exit ;;
+    *)                  check_arg $arg;set -- "$@" "$arg"
+  esac
+done
+if [[ "$trace" = true ]]; then set -x; fi
+# parse dry run bool
+if [[ "$dry_run_input" == "true" ]] || [[ "$dry_run_input" == "1" ]]; then dry_run=true; fi
+# read and validate $project
+project="unset"
+# need to shift by the number of params set above with values
+if [[ "$shift_count" != "0" ]]; then shift $shift_count; fi
+if [[ -z "$*" ]]; then print_usage >&2; exit 1; fi
+# Read in remaining option -- which should be the project name.
+project="$1"
+if ! contains_project "$project"; then
+    log "error" "Project must be one of: ${project_list[*]}" >&2
+    print_usage >&2
+    exit 1
+fi
+if [[ -z "$phab_id" ]]; then
+    log "error" "Must supply a Phabricator differential id with \"--phab-id\" when using setting \"--release\"." >&2
+    print_usage >&2
+    exit 1
+fi
+if [[ "$trace" = true ]]; then set -x; fi
+# END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
+
+# BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
+SECONDS=0
+
+echo_set_options
+merge
+
+duration="$SECONDS"
+FORMATTED=$(date "+%YT%H:%M:%S%z")
+log "info" "------------------------------------------------------------------------"
+log "info" "MERGE SUCCESS"
+log "info" "------------------------------------------------------------------------"
+log "info" "Total time: $duration s"
+log "info" "Finished at: $FORMATTED"
+log "info" "Twitter $NAME version v$VERSION"
+log "info" "------------------------------------------------------------------------"
+# END: EXECUTE BUILD ------------------------------------------------------------------------------------

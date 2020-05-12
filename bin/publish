@@ -1,0 +1,284 @@
+#!/bin/bash
+set -euo pipefail
+
+# shellcheck source=src/lib.sh
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
+
+#######################################################################
+# Script for releasing Twitter OSS libraries based their Github source.
+#
+# See: print_usage function for usage.
+# NOTE: this script is expected to be run in the directory of the
+# project being released.
+#######################################################################
+VERSION="20.4.1"
+NAME="Dodo Publish"
+
+# Util publishes two projects independently
+UTIL_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned +publishM2;"
+UTIL_COMMANDS="${UTIL_COMMANDS}./sbt \"project util-intellij\" +publishSigned"
+declare "util_name=util"
+declare "util_commands=$UTIL_COMMANDS"
+
+# Scrooge publishes it's projects independently for various reasons (including the sbt-plugin and maven-plugin).
+SCROOGE_COMMANDS="./sbt \"project scrooge-core\" +publishLocal +publishLocalSigned +publishSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLocalSigned +publishSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publishLocalSigned +publishSigned;"
+# sbt-plugin needs the generator in scala 2.10 and 2.12 and published to m2.
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 publishLocalSigned publishM2;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocalSigned publishM2;"
+declare "scrooge_name=scrooge"
+declare "scrooge_commands=$SCROOGE_COMMANDS"
+# publish scrooge-sbt-plugin
+SCROOGE_SBT_PLUGIN_COMMANDS="./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 publishSigned;"
+SCROOGE_SBT_PLUGIN_COMMANDS="${SCROOGE_SBT_PLUGIN_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishSigned;"
+declare "scroogesbtplugin_name=scrooge-sbt-plugin"
+declare "scroogesbtplugin_commands=$SCROOGE_SBT_PLUGIN_COMMANDS"
+# publish scrooge-maven-plugin
+# We skip javadoc generation due to this issue:
+# https://issues.apache.org/jira/browse/MJAVADOC-382
+SCROOGE_MAVEN_PLUGIN_COMMANDS="cd scrooge-maven-plugin;mvn -Dmaven.javadoc.skip=true deploy -Pgithub;cd ..;"
+declare "scroogemavenplugin_name=scrooge-maven-plugin"
+declare "scroogemavenplugin_commands=$SCROOGE_MAVEN_PLUGIN_COMMANDS"
+
+FINAGLE_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned +publishM2"
+declare "finagle_name=finagle"
+declare "finagle_commands=$FINAGLE_COMMANDS"
+
+TWITTER_SERVER_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned"
+declare "twitterserver_name=twitter-server"
+declare "twitterserver_commands=$TWITTER_SERVER_COMMANDS"
+
+FINATRA_COMMANDS="./sbt +publishLocalSigned +publishSigned"
+declare "finatra_name=finatra"
+declare "finatra_commands=$FINATRA_COMMANDS"
+
+GITHUB_API_URL="https://api.github.com"
+GITHUB_ACCEPT="Accept: application/vnd.github.v3+json"
+WORKSPACE=${GITHUB_WORKSPACE:-.}
+
+# Validation project list
+project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" "scrooge-sbt-plugin" "scrooge-maven-plugin")
+
+# Initialize defaults
+release_version=""      # Version to be released. While this will be parsed from build.sbt files, we need to perform some up-front validation as well.
+phab_id=""              # Differential ID to use as the criteria for finding the pre-release commit in the Github repository.
+dry_run=false           # Output but don't execute the release commands
+verbose=false           # prints build configuration options and other verbose statements
+trace=false             # set -x
+
+function print_usage {
+    echo "USAGE: $0 --phab-id D123456 --version 17.12.0 --verbose <project>"
+    echo "Options:
+  --phab-id         Differential ID to use as the criteria for finding the pre-release commit in the develop branch.
+  --version         Version to be released.
+  --dry-run         Output, but do not execute the release. Remotes will still be cloned. Default: false.
+  --verbose         Run in verbose mode. Default: false.
+  --trace           Run in trace mode. Note: extremely verbose. Default: false.
+  --help            Print usage.
+  project           [REQUIRED] Project to publish. Must be one of: ${project_list[*]}."
+}
+
+function release {
+    # Start release of the given project
+    local details=""
+    if [[ "$dry_run" = true ]]; then details=" (dry-run)"; fi
+    log "info" ""
+    log "info" "------------------------------------------------------------------------"
+    log "info" "Release $project v${release_version}${details}"
+    log "info" "------------------------------------------------------------------------"
+    log "info" ""
+
+    if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
+      # update master from develop branch
+      log "info" "--- Merging develop branch commits into master branch ---"
+      log "info" ""
+      merge_master
+    fi
+    local -r version=$(parse_version "$project")
+    if [[ "$version" != "$release_version" ]]; then
+      log "error" ">>> Parsed version: $version does not equal passed release version: $release_version."
+      log "error" ">>> Please check the given release version to ensure it is correctly specified."
+      if [[ "$dry_run" == false ]] ; then
+        exit 1
+      else
+        log "info" ""
+      fi
+    fi
+
+    # checkout master and run commands
+    log "info" "--- Running release commands ---"
+    log "info" ""
+    if [[ "$dry_run" = false ]]; then
+      git checkout master > /dev/null 2>&1; git pull > /dev/null 2>&1
+    fi
+    run_commands "$(array_get "${project//-/}" commands)"
+
+    if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
+      # push tags when on master (for release)
+      log "info" ""
+      log "info" "--- Pushing $project-$version tag to origin/master ---"
+      push_tag_and_master
+      github_release
+    fi
+}
+
+function parse_version {
+    if [[ "$project" == "scrooge-sbt-plugin" ]] || [[ "$project" == "scrooge-maven-plugin" ]]; then
+      sed -n 's/val releaseVersion = "\(.*\)"/\1/p' "$WORKSPACE/scrooge/build.sbt"
+    else
+      sed -n 's/val releaseVersion = "\(.*\)"/\1/p' "$WORKSPACE/$project/build.sbt"
+    fi
+}
+
+function run_commands {
+    local commands=$1
+    IFS=';' read -ra commandsArray <<< "$commands"
+    for command in "${commandsArray[@]}"; do
+        if [[ "$verbose" = false ]]; then
+            command="${command//.\/sbt /./sbt --warn }" # set sbt log level to warn
+        fi
+        log "info" "$command"
+        if [[ "$dry_run" = false ]]; then
+          retry 2 "$command"
+        fi
+    done
+}
+
+function push_tag_and_master {
+    # we force create here so that we can overwrite if we need to recover a partial state
+    local -r create_tag="git tag -f $project-$version"
+    log "info" "$create_tag"
+    if [[ "$dry_run" = false ]]; then
+      eval "$create_tag"
+    fi
+
+    # we force push here so that we can overwrite if we need to recover a partial state
+    local -r push_tag="git push -f origin $project-$version"
+    log "info" "$push_tag"
+    if [[ "$dry_run" = false ]]; then
+        eval "$push_tag"
+    fi
+
+    # we don't need to force push here--if we're up to date, it will still return 0
+    local -r push_master="git push origin master"
+    log "info" "$push_master"
+    if [[ "$dry_run" = false ]]; then
+        eval "$push_master"
+    fi
+}
+
+# only done after push_tag_and_master, requires GITHUB_TOKEN env var to be set.
+function github_release {
+    local github_token=${GITHUB_TOKEN:-XXXXX}
+
+    if [[ -n "$github_token" ]] && [[ "$github_token" != "XXXXX" ]]; then
+        release_name="$(echo "$project" | awk '{$1=toupper(substr($1,0,1))substr($1,2)}1') $version"
+        log "info" "Creating Github release: $release_name"
+        local -r create_release_curl_cmd="curl -s -o /dev/null -u \"finaglehelper:$github_token\" -X POST -H \"$GITHUB_ACCEPT\" -H \"Content-Type: application/json\" -d '{\"tag_name\": \"$project-$version\", \"name\": \"$release_name\", \"draft\": true}' \"${GITHUB_API_URL}/repos/twitter/$project/releases\""
+        log "info" "${create_release_curl_cmd/$github_token/XXXXX}"
+        if [[ "$dry_run" = false ]]; then
+            eval "$create_release_curl_cmd"
+        fi
+    else
+        log "info" "Skipping creation of Github release. No GITHUB_TOKEN specified."
+    fi
+}
+
+function echo_set_options {
+    if [[ "$verbose" = true ]]; then
+        log "debug" "------------------------------------------------------------------------"
+        current_date=$(date "+%YT%H:%M:%S%z")
+        log "debug" "Twitter $NAME v$VERSION ($current_date)"
+        log "debug" ""
+        log "debug" "--- java version ---"
+        version=$(java -version 2>&1); version_lines=$(echo java -version 2>&1 | wc -l)
+        i=1; while [ "$i" -le "$version_lines" ]; do
+            line=$(echo "$version" | head -n $i | tail -n 1)
+            log "debug" "  $line"
+            i=$((i + 1))
+        done
+        log "debug" ""
+        log "debug" "--- env ---"
+        log "debug" "  sbt opts = $SBT_OPTS"
+        log "debug" "  workspace = $WORKSPACE"
+        log "debug" "  ci = ${CI:-false}"
+        log "debug" ""
+        log "debug" "--- options ---"
+        log "debug" "  project  = $project"
+        log "debug" "  release  = $release_version"
+        log "debug" "  phab-id  = $phab_id"
+        log "debug" "  dry-run   = ${dry_run}"
+        log "debug" ""
+    fi
+}
+
+# BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
+# Simple option parsing. We could use getopts but rather use "long"
+# names only. And this is position-agnostic to the options, e.g.,
+# these options can occur before or after the main arguments.
+shift_count="0"
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--version")        release_version=$1; ((shift_count+=1)) ;;
+    "--phab-id")        phab_id=$1; ((shift_count+=1)) ;;
+    "--dry-run")        dry_run_input=$1; ((shift_count+=1)) ;;
+    "--verbose")        verbose=true ;;
+    "--trace")          trace=true ;;
+    "--help")           print_usage >&2; exit ;;
+    *)                  check_arg $arg;set -- "$@" "$arg"
+  esac
+done
+if [[ "$trace" = true ]]; then set -x; fi
+# parse dry run bool
+if [[ "$dry_run_input" == "true" ]] || [[ "$dry_run_input" == "1" ]]; then dry_run=true; fi
+# read and validate $project
+project="unset"
+# need to shift by the number of params set above with values
+if [[ "$shift_count" != "0" ]]; then shift $shift_count; fi
+if [[ -z "$*" ]]; then print_usage >&2; exit 1; fi
+# Read in remaining option -- which should be the project name.
+project="$1"
+if ! contains_project "$project"; then
+    log "error" "Project must be one of: ${project_list[*]}" >&2
+    print_usage >&2
+    exit 1
+fi
+if [[ -z "$phab_id" ]]; then
+    log "error" "Must supply a differential id with \"--phab-id\"." >&2
+    print_usage >&2
+    exit 1
+fi
+if [[ -z "$release_version" ]]; then
+    log "error" "Must supply a release version." >&2
+    print_usage >&2
+    exit 1
+fi
+if [[ "$dry_run" = false ]] && [[ -z "$GITHUB_TOKEN" ]]; then
+    log "error" "GITHUB_TOKEN environment variable MUST be set. "
+    exit 1
+fi
+if [[ "$trace" = true ]]; then set -x; fi
+# END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
+
+# SET SBT_OPTS ------------------------------------------------------------------------------------------
+export SBT_OPTS="-DSKIP_FLAKY=true -Dsbt.log.noformat=true"
+
+# BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
+SECONDS=0
+
+echo_set_options
+release
+
+duration="$SECONDS"
+FORMATTED=$(date "+%YT%H:%M:%S%z")
+log "info" "------------------------------------------------------------------------"
+log "info" "RELEASE SUCCESS"
+log "info" "------------------------------------------------------------------------"
+log "info" "Total time: $duration s"
+log "info" "Finished at: $FORMATTED"
+log "info" "Twitter $NAME version v$VERSION"
+log "info" "------------------------------------------------------------------------"
+# END: EXECUTE BUILD ------------------------------------------------------------------------------------

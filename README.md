@@ -45,7 +45,8 @@ $ ./dodo/bin/build --no-test --scala-version 2.12.4 finagle
 Builder options:
 
 ```
---all             Build all projects in the DAG list (overrides --include). Default: false.
+--all             Build all projects in the DAG list (overrides --include). 
+                  Default: false.
 --clean           Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
 --clean-files     Delete all Dodo caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, 
                   and $DODO_DIRECTORY/builds. Default: false.
@@ -62,12 +63,15 @@ Builder options:
                   Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set 
                   --local and --sbt-version with this option. Default: unset.
 --publish-m2      Also publish artifacts to the local ~/.m2 repository. Default: false.
---sbt-version     The sbt version to use when downloading the sbt launch jar. Default: unset.
+--sbt-version     The sbt version to use when downloading the sbt launch jar. 
+                  Default: unset, the project defined sbt version will used.
 --dry-run         Output, but do not execute the sbt build commands. If using remotes
                   they will still be cloned. Default: false.
 --verbose         Run in verbose mode. Default: false.
 --trace           Run in trace mode. Note: extremely verbose. Default: false.
 --help            Print usage.
+project           [OPTIONAL] Individual project for which to build all dependencies.
+                  Optional if '--all' is passed. Required otherwise."
 ```
 
 ### <a name="clean-up" href="#clean-up">Clean Up</a>

@@ -1,0 +1,24 @@
+name: merge-master
+
+# Merges the 'develop' branch into master on pushes to 'develop'
+defaults:
+  run:
+    shell: bash
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  merge-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: develop
+      - name: merge
+        run: |
+          develop_head=$(git rev-parse HEAD)
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          git checkout master && git merge "$develop_head" && git push -f origin master
+
