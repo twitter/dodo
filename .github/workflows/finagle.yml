@@ -70,7 +70,6 @@ jobs:
           ref: master
           path: finagle
       - name: release/finagle
-        needs: checkout/finagle
         run: |
           git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle

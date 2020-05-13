@@ -9,10 +9,6 @@ jdk:
   - openjdk11
 
 before_script:
-  # See https://docs.travis-ci.com/user/encrypting-files/#automated-encryption
-  # for information on encrypting files with travis. This line decrypts the
-  # encrypted sonatype.sbt.enc file.
-  - openssl aes-256-cbc -K $encrypted_913079356b93_key -iv $encrypted_913079356b93_iv -in sonatype.sbt.enc -out sonatype.sbt -d
   # default $SBT_OPTS is irrelevant to sbt launcher
   - unset SBT_OPTS
   - chmod +x ./bin/build
