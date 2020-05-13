@@ -83,14 +83,14 @@ jobs:
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-sbt-plugin
       - name: release/scrooge-sbt-plugin
-        if: ${{ github.event.client_playload.scrooge_sbt_plugin }}
+        if: ${{ github.event.client_payload.scrooge_sbt_plugin }}
         run: |
           git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-sbt-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-maven-plugin
       - name: release/scrooge-maven-plugin
-        if: ${{ github.event.client_playload.scrooge_maven_plugin }}
+        if: ${{ github.event.client_payload.scrooge_maven_plugin }}
         run: |
           git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-maven-plugin

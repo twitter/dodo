@@ -176,7 +176,7 @@ function github_release {
     if [[ -n "$github_api_token" ]] && [[ "$github_api_token" != "XXXXX" ]]; then
         release_name="$(echo "$project" | awk '{$1=toupper(substr($1,0,1))substr($1,2)}1') $version"
         log "info" "Creating Github release: $release_name"
-        local -r create_release_curl_cmd="curl -s -o /dev/null -u \"finaglehelper:$github_api_token\" -X POST -H \"$GITHUB_ACCEPT\" -H \"Content-Type: application/json\" -d '{\"tag_name\": \"$project-$version\", \"name\": \"$release_name\", \"draft\": true}' \"${GITHUB_API_URL}/repos/twitter/$project/releases\""
+        local -r create_release_curl_cmd="curl -s -o /dev/null -X POST -H \"Authorization: token $github_api_token\" -H \"$GITHUB_ACCEPT\" -H \"Content-Type: application/json\" -d '{\"tag_name\": \"$project-$version\", \"name\": \"$release_name\", \"draft\": true}' \"${GITHUB_API_URL}/repos/twitter/$project/releases\""
         log "info" "${create_release_curl_cmd/$github_api_token/XXXXX}"
         if [[ "$dry_run" = false ]]; then
             eval "$create_release_curl_cmd"
