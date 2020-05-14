@@ -64,6 +64,10 @@ function check_arg {
 }
 
 function fetch_branches {
+  # twitter/finatra has issues unless we manually set the remote.origin.fetch
+  local -r gitcfg_cmd="git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*"
+  log "info" "$gitcfg_cmd"
+  eval "$gitcfg_cmd"
   local -r master_head_commit_ts=$(git show -s --format=%ct HEAD)
   local -r fetch_cmd="git fetch --no-tags --prune --shallow-since=$master_head_commit_ts origin +refs/heads/*:refs/remotes/origin/*"
   log "info" "$fetch_cmd"
