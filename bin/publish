@@ -81,7 +81,7 @@ function print_usage {
 }
 
 function release {
-    # Start release of the given project
+    # start release of the given project
     local details=""
     if [[ "$dry_run" = true ]]; then details=" (dry-run)"; fi
     log "info" ""
@@ -91,6 +91,9 @@ function release {
     log "info" ""
 
     if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
+      # git fetch branches with a depth to the timestamp of the current master HEAD
+      log "info" "--- Fetch develop branch commits ---"
+      fetch_branches
       # update master from develop branch
       log "info" "--- Merging develop branch commits into master branch ---"
       log "info" ""

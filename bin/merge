@@ -34,6 +34,12 @@ function print_usage {
 }
 
 function merge {
+  # git fetch branches with a depth to the timestamp of the current master HEAD
+  log "info" "--- Fetch develop branch commits ---"
+  fetch_branches
+  # update master from develop branch
+  log "info" "--- Merging develop branch commits into master branch ---"
+  log "info" ""
   merge_master
 }
 

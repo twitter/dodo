@@ -46,18 +46,46 @@ jobs:
           echo 'resolvers += Classpaths.sbtPluginReleases' > ~/.sbt/1.0/plugins/gpg.sbt
           echo 'addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")' >> ~/.sbt/1.0/plugins/gpg.sbt
       # ensure upstreams have merged develop branch into master
+     - name: checkout/util
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/util
+          ref: master
+          path: util
       - name: merge/util
         run: |
           ${{ github.workspace }}/bin/merge --phab-id ${{ github.event.client_payload.phab_id }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose util
+        working-directory: ${{ github.workspace }}/util
+      - name: checkout/scrooge
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/scrooge
+          ref: master
+          path: scrooge
       - name: merge/scrooge
         run: |
           ${{ github.workspace }}/bin/merge --phab-id ${{ github.event.client_payload.phab_id }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge
+        working-directory: ${{ github.workspace }}/scrooge
+      - name: checkout/finagle
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/finagle
+          ref: master
+          path: finagle
       - name: merge/finagle
         run: |
           ${{ github.workspace }}/bin/merge --phab-id ${{ github.event.client_payload.phab_id }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle
+        working-directory: ${{ github.workspace }}/finagle
+      - name: checkout/twitter-server
+        uses: actions/checkout@v2
+        with:
+          repository: twitter/twitter-server
+          ref: master
+          path: twitter-server
       - name: merge/twitter-server
         run: |
           ${{ github.workspace }}/bin/merge --phab-id ${{ github.event.client_payload.phab_id }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose twitter-server
+        working-directory: ${{ github.workspace }}/twitter-server
       # run dodo to build finatra dependencies
       - name: dodo/build
         uses: cacoco/dodo-build@v2
@@ -77,6 +105,5 @@ jobs:
           path: finatra
       - name: release/finatra
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finatra
         working-directory: ${{ github.workspace }}/finatra

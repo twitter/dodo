@@ -63,6 +63,13 @@ function check_arg {
     fi
 }
 
+function fetch_branches {
+  local -r master_head_commit_ts=$(git show -s --format=%ct HEAD)
+  local -r fetch_cmd="git fetch --no-tags --prune --shallow-since=$master_head_commit_ts origin +refs/heads/*:refs/remotes/origin/*"
+  log "info" "$fetch_cmd"
+  eval "$fetch_cmd"
+}
+
 # shellcheck disable=SC2154
 function merge_master {
     # use the phab_id to find the correct commit from the develop branch.

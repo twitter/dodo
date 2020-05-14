@@ -66,7 +66,6 @@ jobs:
           path: util
       - name: release/util
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose util
         working-directory: ${{ github.workspace }}/util
       # checkout scrooge and release
@@ -78,21 +77,18 @@ jobs:
           path: scrooge
       - name: release/scrooge
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-sbt-plugin
       - name: release/scrooge-sbt-plugin
         if: ${{ github.event.client_payload.scrooge_sbt_plugin }}
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-sbt-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-maven-plugin
       - name: release/scrooge-maven-plugin
         if: ${{ github.event.client_payload.scrooge_maven_plugin }}
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-maven-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # checkout finagle and release
@@ -104,7 +100,6 @@ jobs:
           path: finagle
       - name: release/finagle
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle
         working-directory: ${{ github.workspace }}/finagle
       # checkout twitter-server and release
@@ -116,7 +111,6 @@ jobs:
           path: twitter-server
       - name: release/twitter-server
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose twitter-server
         working-directory: ${{ github.workspace }}/twitter-server
       # checkout finatra and release
@@ -128,6 +122,5 @@ jobs:
           path: finatra
       - name: release/finatra
         run: |
-          git fetch --no-tags --prune --depth=10 origin +refs/heads/*:refs/remotes/origin/*
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finatra
         working-directory: ${{ github.workspace }}/finatra
