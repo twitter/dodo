@@ -105,7 +105,6 @@ if [[ -z "$phab_id" ]]; then
     print_usage >&2
     exit 1
 fi
-if [[ "$trace" = true ]]; then set -x; fi
 # END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
 
 # BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------

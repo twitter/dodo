@@ -66,7 +66,6 @@ release_version=""      # Version to be released. While this will be parsed from
 phab_id=""              # Differential ID to use as the criteria for finding the pre-release commit in the Github repository.
 dry_run=false           # Output but don't execute the release commands
 verbose=false           # prints build configuration options and other verbose statements
-trace=false             # set -x
 
 function print_usage {
     echo "USAGE: $0 --phab-id D123456 --version 17.12.0 --verbose <project>"
@@ -75,7 +74,6 @@ function print_usage {
   --version         Version to be released.
   --dry-run         Output, but do not execute the release. Remotes will still be cloned. Default: false.
   --verbose         Run in verbose mode. Default: false.
-  --trace           Run in trace mode. Note: extremely verbose. Default: false.
   --help            Print usage.
   project           [REQUIRED] Project to publish. Must be one of: ${project_list[*]}."
 }
@@ -229,12 +227,10 @@ for arg in "$@"; do
     "--phab-id")        phab_id=$1; ((shift_count+=1)) ;;
     "--dry-run")        dry_run_input=$1; ((shift_count+=1)) ;;
     "--verbose")        verbose=true ;;
-    "--trace")          trace=true ;;
     "--help")           print_usage >&2; exit ;;
     *)                  check_arg $arg;set -- "$@" "$arg"
   esac
 done
-if [[ "$trace" = true ]]; then set -x; fi
 # parse dry run bool
 if [[ "$dry_run_input" == "true" ]] || [[ "$dry_run_input" == "1" ]]; then dry_run=true; fi
 # read and validate $project
@@ -263,7 +259,6 @@ if [[ "$dry_run" = false ]] && [[ -z "$GITHUB_TOKEN" ]]; then
     log "error" "GITHUB_TOKEN environment variable MUST be set. "
     exit 1
 fi
-if [[ "$trace" = true ]]; then set -x; fi
 # END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
 
 # SET SBT_OPTS ------------------------------------------------------------------------------------------

@@ -39,7 +39,10 @@ function log {
     local -r lowercaseSeverity=$(echo "$severity" | awk '{print tolower($0)}')
     echo "[$lowercaseSeverity] $message"
 }
+log "info" "------------------------------------------------------------------------"
 log "info" "Twitter $NAME version v$VERSION"
+log "info" "------------------------------------------------------------------------"
+log "info" " "
 
 # shellcheck disable=SC2154
 function contains_project {

@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-# shellcheck source=src/lib.sh
-source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
-
 #######################################################################
 # Script for building Twitter OSS libraries based on either their 
 # Github source or from locally checked out copies.
+#
+# The expected usage of this script includes execution via cURL, thus
+# we do not source the bin/functions here but instead inline (duplicate)
+# the necessary functions here.
 #
 # See: print_usage function for usage.
 #######################################################################
@@ -79,6 +80,57 @@ trace=false             # set -x
 branch="develop"        # branch to clone for all libraries when building projects from remote Github URIs
 publish_m2=false        # also publish to the local ~/.m2 repository
 clean_files=false       # remove caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, $DODO_DIRECTORY/builds.
+
+# Retries a command on failure
+# @param $1 - the maximum number of attempts
+# @param $2 - the command to run
+function retry {
+    local max_attempts=$1; shift
+    local cmd=( "$@" )
+    local attempt=1
+
+    until eval "${cmd[*]}"
+    do
+        if (( attempt == max_attempts ))
+        then
+            log "info" "Command failed, max attempts: $max_attempts exceeded."
+            return 1
+        else
+            log "info" "Command failed. Retrying..."
+            ((attempt++))
+            sleep 1
+        fi
+    done
+}
+
+# Note: does not work if the message contains an array
+function log {
+    local severity=$1
+    local message=$2
+    local -r lowercaseSeverity=$(echo "$severity" | awk '{print tolower($0)}')
+    echo "[$lowercaseSeverity] $message"
+}
+
+function contains_project {
+  local element=$1
+  for project in "${project_list[@]}"; do [[ "$project" == "$element" ]] && return 0; done
+  return 1
+}
+
+function array_get {
+    local array=$1 index=$2
+    local i="${array}_$index"
+    printf '%s' "${!i}"
+}
+
+function check_arg {
+    local arg=$1
+    if [[ $arg == --* ]]; then
+        log "error" "Unrecognized argument: $arg" >&2
+        print_usage >&2
+        exit 1
+    fi
+}
 
  # clean ivy cache -- prevents using any previously resolved dependency over a locally built version.
 function clean_ivy {
@@ -430,8 +482,6 @@ function echo_set_options {
         done
         log "debug" ""
         log "debug" "--- env ---"
-        log "debug" "  sbt opts = $SBT_OPTS"
-        log "debug" "  workspace = $WORKSPACE"
         log "debug" "  ivy_home = $ivy_home"
         log "debug" ""
         log "debug" "--- options ---"
