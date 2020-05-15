@@ -45,7 +45,7 @@ jobs:
         with:
           servers: '[{ "id": "sonatype-nexus-staging", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }, {"id": "sonatype-nexus-snapshots", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }]'
       # ensure upstreams have merged develop branch into master
-     - name: checkout/util
+      - name: checkout/util
         uses: actions/checkout@v2
         with:
           repository: twitter/util

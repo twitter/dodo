@@ -46,7 +46,7 @@ jobs:
           echo 'resolvers += Classpaths.sbtPluginReleases' > ~/.sbt/1.0/plugins/gpg.sbt
           echo 'addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")' >> ~/.sbt/1.0/plugins/gpg.sbt
       # ensure upstreams have merged develop branch into master
-     - name: checkout/util
+      - name: checkout/util
         uses: actions/checkout@v2
         with:
           repository: twitter/util
