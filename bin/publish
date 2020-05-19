@@ -255,8 +255,8 @@ if [[ -z "$release_version" ]]; then
     print_usage >&2
     exit 1
 fi
-if [[ "$dry_run" = false ]] && [[ -z "$GITHUB_TOKEN" ]]; then
-    log "error" "GITHUB_TOKEN environment variable MUST be set. "
+if [[ "$dry_run" = false ]] && [[ -z "$API_KEY" ]]; then
+    log "error" "API_KEY environment variable MUST be set. "
     exit 1
 fi
 # END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
