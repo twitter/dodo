@@ -1,4 +1,4 @@
-import com.typesafe.sbt.pgp.PgpKeys.pgpPassphrase
+import com.jsuereth.sbtpgp.PgpKeys.pgpPassphrase
 
 credentials in Global += Credentials("Sonatype Nexus Repository Manager",
   "oss.sonatype.org",
