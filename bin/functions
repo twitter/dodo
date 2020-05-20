@@ -87,8 +87,10 @@ function merge_master {
     local -r sha=$(git log -1 --pretty=format:"%H" --fixed-strings --grep="$PHABRICATOR/$diff_id")
     if [[ -z "$sha" ]]; then
       log "error" "Unable to find corresponding SHA in $project for PHABRICATOR ID = $phab_id."
+      log "error" "Latest commits in 'master' branch:"
+      git log -n 20 --oneline origin/master
       log "error" "Latest commits in 'develop' branch:"
-      git log -n 20 --oneline
+      git log -n 20 --oneline origin/develop
       exit 1
     fi
     log "info" "Phabricator differential: $phab_id @ $sha"
