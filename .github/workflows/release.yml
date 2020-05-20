@@ -54,9 +54,7 @@ jobs:
           servers: '[{ "id": "sonatype-nexus-staging", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }, {"id": "sonatype-nexus-snapshots", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }]'
       - name: setup/sbt
         run: |
-          mkdir -p ~/.sbt/1.0/plugins
-          echo 'resolvers += Classpaths.sbtPluginReleases' > ~/.sbt/1.0/plugins/gpg.sbt
-          echo 'addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")' >> ~/.sbt/1.0/plugins/gpg.sbt
+          cp -r ${{ github.workspace }}/bin/.sbt ~/.sbt
       # checkout util and release
       - name: checkout/util
         uses: actions/checkout@v2

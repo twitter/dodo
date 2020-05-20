@@ -42,9 +42,7 @@ jobs:
       - uses: olafurpg/setup-gpg@v2
       - name: setup/sbt
         run: |
-          mkdir -p ~/.sbt/1.0/plugins
-          echo 'resolvers += Classpaths.sbtPluginReleases' > ~/.sbt/1.0/plugins/gpg.sbt
-          echo 'addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")' >> ~/.sbt/1.0/plugins/gpg.sbt
+          cp -r ${{ github.workspace }}/bin/.sbt ~/.sbt
       # ensure upstreams have merged develop branch into master
       - name: checkout/util
         uses: actions/checkout@v2
