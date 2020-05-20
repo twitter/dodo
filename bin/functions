@@ -80,9 +80,7 @@ function fetch_branches {
 # shellcheck disable=SC2154
 function merge_master {
     # use the phab_id to find the correct commit from the develop branch.
-    if [[ "$dry_run" = false ]]; then
-      git checkout develop > /dev/null 2>&1; git pull > /dev/null 2>&1
-    fi
+    git checkout develop > /dev/null 2>&1; git pull > /dev/null 2>&1
     local diff_id="$phab_id"
     local -r sha=$(git log -1 --pretty=format:"%H" --fixed-strings --grep="$PHABRICATOR/$diff_id")
     if [[ -z "$sha" ]]; then
@@ -97,9 +95,7 @@ function merge_master {
 
     local -r commit_message=$(curl -s https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.message' | sed 's/\`//g' | sed 's/\\n.*//' | sed 's/\"//g')
     local -r author=$(curl -s https://api.github.com/repos/twitter/"$project"/commits/"$sha" | jq '.commit.author.name' | sed 's/\"//g')
-    if [[ "$dry_run" = false ]]; then
-      git checkout master > /dev/null 2>&1; git pull > /dev/null 2>&1
-    fi
+    git checkout master > /dev/null 2>&1; git pull > /dev/null 2>&1
 
     log "info" "Commit SHA: $project @ $sha"
     log "info" "Commit message: $commit_message"
