@@ -41,7 +41,7 @@ jobs:
           java-version: openjdk@1.8
       - uses: olafurpg/setup-gpg@v2
       - name: setup/gpg-secret
-        run: echo $PGP_SECRET | base64 --decode | gpg --import
+        run: ${{ github.workspace }}/bin/gpg-init
       - name: setup/maven
         uses: whelk-io/maven-settings-xml-action@v4
         with:

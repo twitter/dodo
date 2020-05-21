@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+#######################################################################
+# Script for initializing gpg with PGP_SECRET env var
+#
+# Does not take arguments.
+#######################################################################
+VERSION="20.5.0"
+NAME="Dodo gpg init"
+
+# BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
+SECONDS=0
+
+# DO NOT leak out the $PGP_SECRET in the output!
+mkdir ~/.gnupg
+echo "$PGP_SECRET" > ~/.gnupg/sonatype.asc
+gpg --import ~/.gnupg/sonatype.asc
+
+duration="$SECONDS"
+FORMATTED=$(date "+%YT%H:%M:%S%z")
+log "info" "------------------------------------------------------------------------"
+log "info" "INIT SUCCESS"
+log "info" "------------------------------------------------------------------------"
+log "info" "Total time: $duration s"
+log "info" "Finished at: $FORMATTED"
+log "info" "Twitter $NAME version v$VERSION"
+log "info" "------------------------------------------------------------------------"
+# END: EXECUTE BUILD ------------------------------------------------------------------------------------
