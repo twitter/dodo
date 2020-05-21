@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# shellcheck source=src/lib.sh
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
+
 #######################################################################
 # Script for initializing gpg with PGP_SECRET env var
 #
@@ -13,9 +16,7 @@ NAME="Dodo gpg init"
 SECONDS=0
 
 # DO NOT leak out the $PGP_SECRET in the output!
-mkdir ~/.gnupg
-echo "$PGP_SECRET" > ~/.gnupg/sonatype.asc
-gpg --import ~/.gnupg/sonatype.asc
+printf "$PGP_SECRET" | gpg --import
 
 duration="$SECONDS"
 FORMATTED=$(date "+%YT%H:%M:%S%z")
