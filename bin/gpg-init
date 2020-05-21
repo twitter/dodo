@@ -16,7 +16,7 @@ NAME="Dodo gpg init"
 SECONDS=0
 
 # DO NOT leak out the $PGP_SECRET in the output!
-printf "$PGP_SECRET" | gpg --import
+printf -- "$PGP_SECRET" | gpg --import
 
 duration="$SECONDS"
 FORMATTED=$(date "+%YT%H:%M:%S%z")
