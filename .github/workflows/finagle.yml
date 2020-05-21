@@ -41,7 +41,7 @@ jobs:
           java-version: openjdk@1.8
       - uses: olafurpg/setup-gpg@v2
       - name: setup/gpg-secret
-        run: echo ${{ PGP_SECRET }} | base64 --decode | gpg --import
+        run: echo $PGP_SECRET | base64 --decode | gpg --import
       - name: setup/sbt
         run: |
           cp -r ${{ github.workspace }}/bin/.sbt ~/.sbt
