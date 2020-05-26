@@ -153,7 +153,7 @@ function run_commands {
 
 function push_tag_and_master {
     repository="$project"
-    if [[ "$project" = scrooge*]]; then
+    if [[ "$project" = scrooge* ]]; then
       repository="scrooge"
     fi
     remote="https://${API_USER}:${API_KEY}@github.com/twitter/${repository}.git"

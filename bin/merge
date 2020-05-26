@@ -43,7 +43,7 @@ function merge {
   merge_master
   # push master branch to remote
   repository="$project"
-  if [[ "$project" = scrooge*]]; then
+  if [[ "$project" = scrooge* ]]; then
     repository="scrooge"
   fi
   remote="https://${API_USER}:${API_KEY}@github.com/twitter/${repository}.git"
