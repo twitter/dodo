@@ -41,6 +41,18 @@ function merge {
   log "info" "--- Merging develop branch commits into master branch ---"
   log "info" ""
   merge_master
+  # push master branch to remote
+  repository="$project"
+  if [[ "$project" = scrooge*]]; then
+    repository="scrooge"
+  fi
+  remote="https://${API_USER}:${API_KEY}@github.com/twitter/${repository}.git"
+  # we don't need to force push here--if we're up to date, it will still return 0
+  local -r push_master="git push $remote HEAD"
+  log "info" "$push_master"
+  if [[ "$dry_run" = false ]]; then
+      eval "$push_master"
+  fi
 }
 
 function echo_set_options {

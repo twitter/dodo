@@ -79,6 +79,10 @@ function print_usage {
 }
 
 function release {
+    # set up git for pushing commits
+    git config --global user.email "${API_USER}@twitter.com"
+    git config --global user.name "$API_USER"
+
     # start release of the given project
     local details=""
     if [[ "$dry_run" = true ]]; then details=" (dry-run)"; fi
@@ -148,6 +152,12 @@ function run_commands {
 }
 
 function push_tag_and_master {
+    repository="$project"
+    if [[ "$project" = scrooge*]]; then
+      repository="scrooge"
+    fi
+    remote="https://${API_USER}:${API_KEY}@github.com/twitter/${repository}.git"
+
     # we force create here so that we can overwrite if we need to recover a partial state
     local -r create_tag="git tag -f $project-$version"
     log "info" "$create_tag"
@@ -156,15 +166,16 @@ function push_tag_and_master {
     fi
 
     # we force push here so that we can overwrite if we need to recover a partial state
-    local -r push_tag="git push -f origin $project-$version"
+    # we want to be to not update anything other than the tag so we specify to push to only the specific tag refspec
+    local -r push_tag="git push $remote --force refs/tags/$project-$version:refs/tags/$project-$version"
     log "info" "$push_tag"
     if [[ "$dry_run" = false ]]; then
         eval "$push_tag"
     fi
 
     # we don't need to force push here--if we're up to date, it will still return 0
-    local -r push_master="git push origin master"
-    log "info" "$push_master"
+    local -r push_master="git push $remote HEAD" # pushes HEAD of the current branch to the branch with the same name on the remote
+    log "info" "$push_master"                    # we're currently in master, thus this should push local master to remote master
     if [[ "$dry_run" = false ]]; then
         eval "$push_master"
     fi
