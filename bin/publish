@@ -221,7 +221,7 @@ function echo_set_options {
         log "debug" "  project  = $project"
         log "debug" "  release  = $release_version"
         log "debug" "  phab-id  = $phab_id"
-        log "debug" "  dry-run   = ${dry_run}"
+        log "debug" "  dry-run   = $dry_run"
         log "debug" ""
     fi
 }

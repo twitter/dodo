@@ -13,6 +13,8 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functi
 VERSION="20.5.0"
 NAME="Dodo Merge Branch"
 
+WORKSPACE=${GITHUB_WORKSPACE:-.}
+
 # Validation project list
 project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" )
 
@@ -76,7 +78,7 @@ function echo_set_options {
         log "debug" "--- options ---"
         log "debug" "  project  = $project"
         log "debug" "  phab-id  = $phab_id"
-        log "debug" "  dry-run   = ${dry_run}"
+        log "debug" "  dry-run   = $dry_run"
         log "debug" ""
     fi
 }
