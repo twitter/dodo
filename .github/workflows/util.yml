@@ -21,7 +21,7 @@ env:
   SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
   BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
   BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
-  API_USER: $ {{ secrets.API_USER }}
+  API_USER: ${{ secrets.API_USER }}
   API_KEY: ${{ secrets.API_KEY }}
 defaults:
   run:
