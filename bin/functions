@@ -103,7 +103,7 @@ function merge_master {
 
     log "info" ""
     log "info" "Merging $sha into master branch"
-    merge_command="git merge $sha"
+    merge_command="git merge --allow-unrelated-histories $sha"
     log "info" "$merge_command"
     if [[ "$dry_run" = false ]]; then
         eval "$merge_command"
