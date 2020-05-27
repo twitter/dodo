@@ -18,8 +18,7 @@ UTIL_COMMANDS="./sbt +test:compile +publishLocal;./sbt ++2.11.12 util-intellij/p
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
-SCROOGE_CORE_COMMANDS="./sbt +scrooge-publish-local/publishLocal;./sbt +scrooge-generator/publishLocal;./sbt ^^0.13.18 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocal"
-
+SCROOGE_CORE_COMMANDS="./sbt +scrooge-publish-local/publishLocal;./sbt ^^0.13.18 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocal"
 declare "scroogecore_name=scrooge"
 declare "scroogecore_commands=$SCROOGE_CORE_COMMANDS"
 
@@ -136,6 +135,8 @@ function check_arg {
 function clean_ivy {
     local project=$1
     local to_delete=()
+    # scroogecore in projects is in the same position as finagle in project_list.
+    if [[ "$project" = "scroogecore" ]]; then project="finagle"; fi
 
     for current in "${project_list[@]}"; do
         if [ "$current" = "$project" ]; then
@@ -144,9 +145,15 @@ function clean_ivy {
             to_delete+=("$current")
         fi
     done
+
+    # account for oddness with finagle and scrooge, finagle should clear built scrooge
+    if [[ "$project" = "finagle" ]]; then
+      to_delete+=("scrooge")
+    fi
+
     to_delete+=("$project")
     for artifact in "${to_delete[@]}"; do
-        dirs=("$ivy_home"/cache/com.twitter/"$artifact"*)
+        dirs=( "$ivy_home"/cache/com.twitter/"$artifact"* )
         for d in ${dirs[*]}; do
           if [[ -d "$d" ]]; then
             clean_ivy_command="rm -f $d > /dev/null 2>&1"
@@ -208,8 +215,6 @@ function run_commands {
                 # HACKY - the scroogecore command set is a different format than all the others and as such needs to be treated
                 # specially, or we need to do more complicated regex replacing.
                 commands="${commands//+scrooge-publish-local\/publishLocal/+scrooge-publish-local/publishLocal +scrooge-publish-local/publishM2}"
-                commands="${commands//scrooge-generator\/publishLocal/scrooge-generator/publishLocal scrooge-generator/publishM2}"
-                commands="${commands//scrooge-sbt-plugin\/publishLocal/scrooge-sbt-plugin/publishLocal scrooge-sbt-plugin/publishM2}"
             else
                 commands="${commands//$publish_to_replace/+publishLocal +publishM2}"
             fi
