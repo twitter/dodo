@@ -50,7 +50,8 @@ TWITTER_SERVER_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned"
 declare "twitterserver_name=twitter-server"
 declare "twitterserver_commands=$TWITTER_SERVER_COMMANDS"
 
-FINATRA_COMMANDS="./sbt +publishLocalSigned +publishSigned"
+FINATRA_COMMANDS="sed -i'' -e \"s/\/\/ START EXAMPLES/\/* \/\/ START EXAMPLES/g\" build.sbt;sed -i'' -e \"s/\/\/ END EXAMPLES/*\/ \/\/ END EXAMPLES/g\" build.sbt;"
+FINATRA_COMMANDS="${FINATRA_COMMANDS=}./sbt +publishLocalSigned +publishSigned"
 declare "finatra_name=finatra"
 declare "finatra_commands=$FINATRA_COMMANDS"
 
@@ -121,6 +122,14 @@ function release {
     run_commands "$(array_get "${project//-/}" commands)"
 
     if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
+      # undo any local changes
+      reset_cmd="git reset HEAD --hard"
+      log "info" ""
+      log "info" "-- Undoing any local changes ---"
+      log "info" "$reset_cmd"
+      if [[ "$dry_run" = false ]]; then
+        eval "$reset_cmd"
+      fi
       # push tags when on master (for release)
       log "info" ""
       log "info" "--- Pushing $project-$version tag to origin/master ---"

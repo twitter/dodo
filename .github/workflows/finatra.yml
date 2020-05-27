@@ -110,11 +110,6 @@ jobs:
           token: ${{ secrets.API_KEY }}
           ref: master
           path: finatra
-      - name: remove/examples
-        run: |
-          sed -i'' -e "s/\/\/ START EXAMPLES/\/* \/\/ START EXAMPLES/g" build.sbt
-          sed -i'' -e "s/\/\/ END EXAMPLES/*\/ \/\/ END EXAMPLES/g" build.sbt
-        working-directory: ${{ github.workspace }}/finatra
       - name: release/finatra
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finatra
