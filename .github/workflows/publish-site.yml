@@ -25,7 +25,7 @@ jobs:
   publish-site:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.1.1
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
@@ -34,7 +34,7 @@ jobs:
           java-version: openjdk@1.8
       # publish util site
       - name: checkout/util
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.1.1
         with:
           repository: twitter/util
           fetch-depth: 3
@@ -46,7 +46,7 @@ jobs:
         working-directory: ${{ github.workspace }}/util
       # publish scrooge site
       - name: checkout/scrooge
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.1.1
         with:
           repository: twitter/scrooge
           fetch-depth: 3
@@ -58,7 +58,7 @@ jobs:
         working-directory: ${{ github.workspace }}/scrooge
       # publish finagle site
       - name: checkout/finagle
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finagle
           fetch-depth: 3
@@ -70,7 +70,7 @@ jobs:
         working-directory: ${{ github.workspace }}/finagle
       # publish twitter-server site
       - name: checkout/twitter-server
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.1.1
         with:
           repository: twitter/twitter-server
           fetch-depth: 3
@@ -82,7 +82,7 @@ jobs:
         working-directory: ${{ github.workspace }}/twitter-server
       # publish finatra site
       - name: checkout/finatra
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finatra
           fetch-depth: 3
