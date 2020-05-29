@@ -14,6 +14,10 @@ name: site-publish
 # }
 env:
   JAVA_OPTS: "-Dsbt.log.noformat=true"
+  API_USER: ${{ secrets.API_USER }}
+  API_KEY: ${{ secrets.API_KEY }}
+  SCALA_VERSION: "2.12"
+  REMOTE_BASE: "https://${API_USER}:${API_KEY}@github.com/twitter"
 defaults:
   run:
     shell: bash
@@ -25,70 +29,194 @@ jobs:
   publish-site:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.1.1
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
       - uses: olafurpg/setup-scala@v7
         with:
           java-version: openjdk@1.8
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: setup/sphinx
+        run: |
+          sudo apt-get install python3-sphinx
+      - name: setup/git
+        run: |
+          git config --global user.email "${API_USER}@twitter.com"
+          git config --global user.name "$API_USER"
+
       # publish util site
       - name: checkout/util
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/util
-          fetch-depth: 3
+          token: ${{ secrets.API_KEY }}
           ref: master
           path: util
-      - name: publish/util
-        if: ${{ !github.event.client_payload.dry_run }}
-        run: bash -ex pushsite.bash
+      - name: generate/util
+        run: |
+          ./sbt --warn util-doc/makeSite
+          ./sbt --warn unidoc
         working-directory: ${{ github.workspace }}/util
+      - name: checkout/util-gh-pages
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/util
+          token: ${{ secrets.API_KEY }}
+          ref: gh-pages
+          path: util-gh-pages
+      - name: publish/util-gh-pages
+        run: |
+          touch .nojekyll
+          cp ${{ github.workspace }}/util/site/index.html .
+          rm -fr docs/
+          cp -r ${{ github.workspace }}/util/target/scala-$SCALA_VERSION/unidoc/ docs/
+          rm -fr guide/
+          cp -r ${{ github.workspace }}/util/doc/target/site/ guide/
+          git commit -a -m "site publish by $API_USER"
+          git diff --name-only origin/gh-pages gh-pages
+        working-directory: ${{ github.workspace }}/util-gh-pages
+      - name: push/util-gh-pages
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: |
+          git push $REMOTE_BASE/util.git HEAD
+        working-directory: ${{ github.workspace }}/util-gh-pages
+
       # publish scrooge site
       - name: checkout/scrooge
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/scrooge
-          fetch-depth: 3
+          token: ${{ secrets.API_KEY }}
           ref: master
           path: scrooge
-      - name: publish/scrooge
-        if: ${{ !github.event.client_payload.dry_run }}
-        run: sh pushsite.bash
+      - name: generate/scrooge
+        run: |
+          ./sbt --warn scrooge-doc/makeSite
         working-directory: ${{ github.workspace }}/scrooge
+      - name: checkout/scrooge-gh-pages
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/scrooge
+          token: ${{ secrets.API_KEY }}
+          ref: gh-pages
+          path: scrooge-gh-pages
+      - name: publish/scrooge-gh-pages
+        run: |
+          git rm -fr .
+          touch .nojekyll
+          cp -r ${{ github.workspace }}/scrooge/doc/target/site/* .
+          git commit -a -m "site publish by $API_USER"
+          git diff --name-only origin/gh-pages gh-pages
+        working-directory: ${{ github.workspace }}/scrooge-gh-pages
+      - name: push/scrooge-gh-pages
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: |
+          git push $REMOTE_BASE/scrooge.git HEAD
+        working-directory: ${{ github.workspace }}/scrooge-gh-pages
+
       # publish finagle site
       - name: checkout/finagle
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finagle
-          fetch-depth: 3
+          token: ${{ secrets.API_KEY }}
           ref: master
           path: finagle
-      - name: publish/finagle
-        if: ${{ !github.event.client_payload.dry_run }}
-        run: sh pushsite.bash
+      - name: generate/finagle
+        run: |
+          ./sbt --warn finagle-doc/makeSite
+          ./sbt --warn unidoc
         working-directory: ${{ github.workspace }}/finagle
+      - name: checkout/finagle-gh-pages
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/finagle
+          token: ${{ secrets.API_KEY }}
+          ref: gh-pages
+          path: finagle-gh-pages
+      - name: publish/finagle-gh-pages
+        run: |
+          touch .nojekyll
+          cp ${{ github.workspace }}/finagle/site/index.html .
+          rm -fr docs/
+          cp -r ${{ github.workspace }}/finagle/target/scala-$SCALA_VERSION/unidoc/ docs/
+          rm -fr guide/
+          cp -r ${{ github.workspace }}/finagle/doc/target/site/ guide/
+          git commit -a -m "site publish by $API_USER"
+          git diff --name-only origin/gh-pages gh-pages
+        working-directory: ${{ github.workspace }}/finagle-gh-pages
+      - name: push/finagle-gh-pages
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: |
+          git push $REMOTE_BASE/finagle.git HEAD
+        working-directory: ${{ github.workspace }}/finagle-gh-pages
+
       # publish twitter-server site
       - name: checkout/twitter-server
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/twitter-server
-          fetch-depth: 3
+          token: ${{ secrets.API_KEY }}
           ref: master
           path: twitter-server
-      - name: publish/twitter-server
-        if: ${{ !github.event.client_payload.dry_run }}
-        run: bash -ex pushsite.bash
+      - name: generate/twitter-server
+        run: |
+          ./sbt --warn twitterServerDoc/makeSite
         working-directory: ${{ github.workspace }}/twitter-server
+      - name: checkout/twitter-server-gh-pages
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/twitter-server
+          token: ${{ secrets.API_KEY }}
+          ref: gh-pages
+          path: twitter-server-gh-pages
+      - name: publish/twitter-server-gh-pages
+        run: |
+          git rm -fr .
+          touch .nojekyll
+          cp -r ${{ github.workspace }}/twitter-server/doc/target/site/* .
+          git commit -a -m "site publish by $API_USER"
+          git diff --name-only origin/gh-pages gh-pages
+        working-directory: ${{ github.workspace }}/twitter-server-gh-pages
+      - name: push/twitter-server-gh-pages
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: |
+          git push $REMOTE_BASE/twitter-server.git HEAD
+        working-directory: ${{ github.workspace }}/twitter-server-gh-pages
+
       # publish finatra site
       - name: checkout/finatra
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finatra
-          fetch-depth: 3
+          token: ${{ secrets.API_KEY }}
           ref: master
           path: finatra
-      - name: publish/finatra
-        if: ${{ !github.event.client_payload.dry_run }}
-        run: bash -ex pushsite.bash
+      - name: generate/finatra
+        run: |
+          ./sbt --warn site/makeSite
+          ./sbt --warn unidoc
         working-directory: ${{ github.workspace }}/finatra
+      - name: checkout/finatra-gh-pages
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/finatra
+          token: ${{ secrets.API_KEY }}
+          ref: gh-pages
+          path: finatra-gh-pages
+      - name: publish/finatra-gh-pages
+        run: |
+          git rm -fr .
+          touch .nojekyll
+          cp -r ${{ github.workspace }}/finatra/doc/target/site/* .
+          cp -r ${{ github.workspace }}/finatra/target/scala-$SCALA_VERSION/unidoc/ scaladocs/
+          git commit -a -m "site publish by $API_USER"
+          git diff --name-only origin/gh-pages gh-pages
+        working-directory: ${{ github.workspace }}/finatra-gh-pages
+      - name: push/finatra-gh-pages
+        if: ${{ !github.event.client_payload.dry_run }}
+        run: |
+          git push $REMOTE_BASE/finatra.git HEAD
+        working-directory: ${{ github.workspace }}/finatra-gh-pages
