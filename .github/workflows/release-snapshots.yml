@@ -1,0 +1,114 @@
+name: release-snapshots
+
+# Publishes snapshot releases of twitter/util, twitter/scrooge, twitter/finagle, 
+# twitter/twitter-server, and twitter/finatra.
+# 
+# Runs on a cron trigger
+#
+env:
+  JAVA_OPTS: "-Dsbt.log.noformat=true"
+  PGP_KEY: ${{ secrets.PGP_KEY }}
+  PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+  PGP_SECRET: ${{ secrets.PGP_SECRET }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  DRY_RUN: true
+defaults:
+  run:
+    shell: bash
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # run every night at 8AM UTC (1AM PT)
+    - cron: '0 8 * * *'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dump/context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - uses: actions/checkout@v2.1.1
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - uses: olafurpg/setup-scala@v7
+        with:
+          java-version: openjdk@1.8
+      - uses: olafurpg/setup-gpg@v2
+      - name: setup/gpg-secret
+        run: ${{ github.workspace }}/bin/gpg-init
+      - name: setup/maven
+        uses: whelk-io/maven-settings-xml-action@v4
+        with:
+          servers: '[{"id": "sonatype-nexus-snapshots", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }]'
+      - name: setup/sbt
+        run: |
+          cp -r ${{ github.workspace }}/bin/.sbt ~/.sbt
+      # checkout util and publish
+      - name: checkout/util
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/util
+          ref: develop
+          path: util
+      - name: release/util
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose util
+        working-directory: ${{ github.workspace }}/util
+      # checkout scrooge and publish
+      - name: checkout/scrooge
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/scrooge
+          ref: develop
+          path: scrooge
+      - name: release/scrooge
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge
+        working-directory: ${{ github.workspace }}/scrooge
+      # scrooge-sbt-plugin
+      - name: release/scrooge-sbt-plugin
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-sbt-plugin
+        working-directory: ${{ github.workspace }}/scrooge
+      # scrooge-maven-plugin
+      - name: release/scrooge-maven-plugin
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-maven-plugin
+        working-directory: ${{ github.workspace }}/scrooge
+      # checkout finagle and publish
+      - name: checkout/finagle
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/finagle
+          ref: develop
+          path: finagle
+      - name: release/finagle
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finagle
+        working-directory: ${{ github.workspace }}/finagle
+      # checkout twitter-server and publish
+      - name: checkout/twitter-server
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/twitter-server
+          ref: develop
+          path: twitter-server
+      - name: release/twitter-server
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose twitter-server
+        working-directory: ${{ github.workspace }}/twitter-server
+      # checkout finatra and publish
+      - name: checkout/finatra
+        uses: actions/checkout@v2.1.1
+        with:
+          repository: twitter/finatra
+          ref: develop
+          path: finatra
+      - name: release/finatra
+        run: |
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finatra
+        working-directory: ${{ github.workspace }}/finatra

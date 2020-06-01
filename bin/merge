@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# shellcheck source=src/lib.sh
+# shellcheck disable=SC1091
+# shellcheck disable=SC1090
 source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
 
 #######################################################################
