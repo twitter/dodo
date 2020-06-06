@@ -22,13 +22,13 @@ declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
 # Scrooge publishes it's projects independently for various reasons (including the sbt-plugin and maven-plugin).
-SCROOGE_COMMANDS="./sbt \"project scrooge-core\" +publishLocal +publishLocalSigned +publishSigned;"
+# sbt-plugin needs the generator in scala 2.10 and 2.12 and published to m2.
+SCROOGE_COMMANDS="./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-core\" +publishLocal +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publishLocalSigned +publishSigned;"
-# sbt-plugin needs the generator in scala 2.10 and 2.12 and published to m2.
-SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
-SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 publishLocalSigned publishM2;"
-SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocalSigned publishM2;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 publishLocalSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocalSigned;"
 declare "scrooge_name=scrooge"
 declare "scrooge_commands=$SCROOGE_COMMANDS"
 # publish scrooge-sbt-plugin
@@ -43,7 +43,7 @@ SCROOGE_MAVEN_PLUGIN_COMMANDS="cd scrooge-maven-plugin;mvn -Dmaven.javadoc.skip=
 declare "scroogemavenplugin_name=scrooge-maven-plugin"
 declare "scroogemavenplugin_commands=$SCROOGE_MAVEN_PLUGIN_COMMANDS"
 
-FINAGLE_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned +publishM2"
+FINAGLE_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned"
 declare "finagle_name=finagle"
 declare "finagle_commands=$FINAGLE_COMMANDS"
 
@@ -58,7 +58,9 @@ declare "finatra_commands=$FINATRA_COMMANDS"
 
 GITHUB_API_URL="https://api.github.com"
 GITHUB_ACCEPT="Accept: application/vnd.github.v3+json"
+GITHUB_API_TOKEN=${API_KEY:-XXXXX}
 WORKSPACE=${GITHUB_WORKSPACE:-.}
+IS_CI=${CI:-false}
 
 # Validation project list
 project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" "scrooge-sbt-plugin" "scrooge-maven-plugin")
@@ -119,9 +121,11 @@ function release_snapshot {
 }
 
 function release {
-    # set up git for pushing commits
-    git config --global user.email "${API_USER}@twitter.com"
-    git config --global user.name "$API_USER"
+    if [[ "$IS_CI" = true ]]; then
+      # set up git for pushing commits
+      git config --global user.email "${API_USER}@twitter.com"
+      git config --global user.name "$API_USER"
+    fi
 
     # start release of the given project
     local details=""
@@ -135,11 +139,15 @@ function release {
     if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
       # git fetch branches with a depth to the timestamp of the current master HEAD
       log "info" "--- Fetch develop branch commits ---"
-      fetch_branches
+      if [[ "$IS_CI" = true ]]; then
+        fetch_branches
+      fi
       # update master from develop branch
       log "info" "--- Merging develop branch commits into master branch ---"
       log "info" ""
-      merge_master
+      if [[ "$IS_CI" = true ]]; then
+        merge_master
+      fi
     fi
     local -r version=$(parse_version "$project")
     if [[ "$version" != "$release_version" ]]; then
@@ -182,7 +190,6 @@ function push_tag_and_master {
     if [[ "$project" = scrooge* ]]; then
       repository="scrooge"
     fi
-    remote="https://${API_USER}:${API_KEY}@github.com/twitter/${repository}.git"
 
     # we force create here so that we can overwrite if we need to recover a partial state
     local -r create_tag="git tag -f $project-$version"
@@ -191,31 +198,32 @@ function push_tag_and_master {
       eval "$create_tag"
     fi
 
-    # we force push here so that we can overwrite if we need to recover a partial state
-    # we want to be to not update anything other than the tag so we specify to push to only the specific tag refspec
-    local -r push_tag="git push $remote --force refs/tags/$project-$version:refs/tags/$project-$version"
-    log "info" "$push_tag"
-    if [[ "$dry_run" = false ]]; then
-        eval "$push_tag"
-    fi
-
-    # we don't need to force push here--if we're up to date, it will still return 0
-    local -r push_master="git push $remote HEAD" # pushes HEAD of the current branch to the branch with the same name on the remote
-    log "info" "$push_master"                    # we're currently in master, thus this should push local master to remote master
-    if [[ "$dry_run" = false ]]; then
-        eval "$push_master"
+    if [[ "$IS_CI" = true ]]; then
+      remote="https://${API_USER}:${GITHUB_API_TOKEN}@github.com/twitter/${repository}.git"
+      # we force push here so that we can overwrite if we need to recover a partial state
+      # we want to be to not update anything other than the tag so we specify to push to only the specific tag refspec
+      local -r push_tag="git push $remote --force refs/tags/$project-$version:refs/tags/$project-$version"
+      log "info" "$push_tag"
+      if [[ "$dry_run" = false ]]; then
+          eval "$push_tag"
+      fi
+   
+      # we don't need to force push here--if we're up to date, it will still return 0
+      local -r push_master="git push $remote HEAD" # pushes HEAD of the current branch to the branch with the same name on the remote
+      log "info" "$push_master"                    # we're currently in master, thus this should push local master to remote master
+      if [[ "$dry_run" = false ]]; then
+          eval "$push_master"
+      fi
     fi
 }
 
 # only done after push_tag_and_master, requires API_KEY env var to be set.
 function github_release {
-    local github_api_token=${API_KEY:-XXXXX}
-
-    if [[ -n "$github_api_token" ]] && [[ "$github_api_token" != "XXXXX" ]]; then
+    if [[ -n "$GITHUB_API_TOKEN" ]] && [[ "$GITHUB_API_TOKEN" != "XXXXX" ]]; then
         release_name="$(echo "$project" | awk '{$1=toupper(substr($1,0,1))substr($1,2)}1') $version"
         log "info" "Creating Github release: $release_name"
-        local -r create_release_curl_cmd="curl -s -o /dev/null -X POST -H \"Authorization: token $github_api_token\" -H \"$GITHUB_ACCEPT\" -H \"Content-Type: application/json\" -d '{\"tag_name\": \"$project-$version\", \"name\": \"$release_name\", \"draft\": true}' \"${GITHUB_API_URL}/repos/twitter/$project/releases\""
-        log "info" "${create_release_curl_cmd/$github_api_token/XXXXX}"
+        local -r create_release_curl_cmd="curl -s -o /dev/null -X POST -H \"Authorization: token $GITHUB_API_TOKEN\" -H \"$GITHUB_ACCEPT\" -H \"Content-Type: application/json\" -d '{\"tag_name\": \"$project-$version\", \"name\": \"$release_name\", \"draft\": true}' \"${GITHUB_API_URL}/repos/twitter/$project/releases\""
+        log "info" "${create_release_curl_cmd/$GITHUB_API_TOKEN/XXXXX}"
         if [[ "$dry_run" = false ]]; then
             eval "$create_release_curl_cmd"
         fi
@@ -239,9 +247,9 @@ function echo_set_options {
         done
         log "debug" ""
         log "debug" "--- env ---"
-        log "debug" "  sbt opts  = $SBT_OPTS"
-        log "debug" "  workspace = $WORKSPACE"
-        log "debug" "  ci = ${CI:-false}"
+        log "debug" "  SBT_OPTS  = $SBT_OPTS"
+        log "debug" "  WORKSPACE = $WORKSPACE"
+        log "debug" "  CI        = $IS_CI"
         log "debug" ""
         log "debug" "--- options ---"
         log "debug" "  project           = $project"
@@ -276,6 +284,8 @@ for arg in "$@"; do
 done
 # parse dry run bool
 if [[ "$dry_run_input" == "true" ]] || [[ "$dry_run_input" == "1" ]]; then dry_run=true; fi
+# if local, set dry run to true
+if [[ "$IS_CI" = false ]]; then dry_run=true; fi
 # read and validate $project
 project="unset"
 # need to shift by the number of params set above with values

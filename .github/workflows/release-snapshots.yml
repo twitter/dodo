@@ -12,6 +12,7 @@ env:
   PGP_SECRET: ${{ secrets.PGP_SECRET }}
   SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
   SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  DRY_RUN: false
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 defaults:
   run:
@@ -56,7 +57,7 @@ jobs:
           path: util
       - name: release/util
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose util
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose util
         working-directory: ${{ github.workspace }}/util
       # checkout scrooge and publish
       - name: checkout/scrooge
@@ -69,19 +70,19 @@ jobs:
       - name: release/scrooge
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose scrooge
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-sbt-plugin
       - name: release/scrooge-sbt-plugin
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose scrooge-sbt-plugin
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-sbt-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-maven-plugin
       - name: release/scrooge-maven-plugin
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose scrooge-maven-plugin
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-maven-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # checkout finagle and publish
       - name: checkout/finagle
@@ -94,7 +95,7 @@ jobs:
       - name: release/finagle
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose finagle
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finagle
         working-directory: ${{ github.workspace }}/finagle
       # checkout twitter-server and publish
       - name: checkout/twitter-server
@@ -107,7 +108,7 @@ jobs:
       - name: release/twitter-server
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose twitter-server
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose twitter-server
         working-directory: ${{ github.workspace }}/twitter-server
       # checkout finatra and publish
       - name: checkout/finatra
@@ -120,7 +121,7 @@ jobs:
       - name: release/finatra
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --verbose finatra
+          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finatra
         working-directory: ${{ github.workspace }}/finatra
       - name: slack/notification
         if: ${{ always() }}
