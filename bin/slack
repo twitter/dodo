@@ -1,0 +1,113 @@
+#!/bin/bash
+set -euo pipefail
+
+# shellcheck disable=SC1091
+# shellcheck disable=SC1090
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
+
+#######################################################################
+# Script for sending Slack notifications for release snapshot publishing.
+#
+# See: print_usage function for usage.
+#######################################################################
+VERSION="20.5.0"
+NAME="Dodo Slack Notifications"
+
+GITHUB_LOGO="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png?size=48"
+SLACK_URL=${SLACK_WEBHOOK:?}
+WORKSPACE=${GITHUB_WORKSPACE:-.}
+
+# Initialize defaults
+success=true          # If the workflow run was successful.
+
+function print_usage {
+    echo "USAGE: $0 --success true --verbose"
+    echo "Options:
+  --success        False (versioned release) or True (snapshot release). Default: false.
+  --verbose        Run in verbose mode. Default: false.
+  --help           Print usage."
+}
+
+# see: https://api.slack.com/reference/messaging/attachments#example
+# todo: parameterize the title as well to make this generically useful
+function post() {
+  FORMATTED=$(date +%s)
+  local message=$1
+  local color=${2:-#000000}
+  local data="{\"attachments\": [{\"blocks\": [], \"mrkdwn_in\": [\"text\" ], \"color\": \"$color\", \"author_name\": \"twitter/dodo\", \"author_link\": \"https://github.com/twitter/dodo\", \"author_icon\": \"https://www.pngfind.com/pngs/m/597-5971921_dodo-flightless-bird-extinction-ark-dodo-bird-no.png\", \"title\": \"Workflow: ${GITHUB_WORKFLOW}/${GITHUB_ACTION} [${GITHUB_RUN_ID}/${GITHUB_RUN_NUMBER}]\", \"title_link\": \"https://github.com/twitter/dodo/actions?query=workflow%3Arelease-snapshots\", \"text\": \"$message\", \"footer\": \"twitter/dodo\", \"footer_icon\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\", \"ts\": $FORMATTED}]}"
+
+  local slack_curl_cmd="curl -sD - -o /dev/null -X POST -H \"Content-Type: application/json\" -d '$data' \"$SLACK_URL\""
+  log "info" "$slack_curl_cmd"
+  eval "$slack_curl_cmd"
+}
+
+function success {
+    post "📸 Snapshot publishing \`successful\`." "#229954"
+}
+
+function failure {
+    post "📸 Snapshot publishing \`failed\`." "#DA2700"
+}
+
+function echo_set_options {
+    if [[ "$verbose" = true ]]; then
+        log "debug" "------------------------------------------------------------------------"
+        current_date=$(date "+%YT%H:%M:%S%z")
+        log "debug" "Twitter $NAME v$VERSION ($current_date)"
+        log "debug" ""
+        log "debug" "--- java version ---"
+        version=$(java -version 2>&1); version_lines=$(echo java -version 2>&1 | wc -l)
+        i=1; while [ "$i" -le "$version_lines" ]; do
+            line=$(echo "$version" | head -n $i | tail -n 1)
+            log "debug" "  $line"
+            i=$((i + 1))
+        done
+        log "debug" ""
+        log "debug" "--- env ---"
+        log "debug" "  workspace = $WORKSPACE"
+        log "debug" "  ci        = ${CI:-false}"
+        log "debug" ""
+        log "debug" "--- options ---"
+        log "debug" "  success   = $success"
+        log "debug" ""
+    fi
+}
+
+# BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
+# Simple option parsing. We could use getopts but rather use "long"
+# names only. And this is position-agnostic to the options, e.g.,
+# these options can occur before or after the main arguments.
+shift_count="0"
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--success")        success_input=$1; ((shift_count+=1)) ;;
+    "--verbose")        verbose=true ;;
+    "--help")           print_usage >&2; exit ;;
+    *)                  check_arg $arg;set -- "$@" "$arg"
+  esac
+done
+# parse success bool
+if [[ "$success_input" == "false" ]] || [[ "$success_input" == "0" ]]; then success=false; fi
+
+# BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
+SECONDS=0
+
+echo_set_options
+if [[ "$success" = true ]]; then
+  success
+else
+  failure
+fi
+
+duration="$SECONDS"
+FORMATTED=$(date "+%YT%H:%M:%S%z")
+log "info" "------------------------------------------------------------------------"
+log "info" "SLACK NOTIFICATION SUCCESS"
+log "info" "------------------------------------------------------------------------"
+log "info" "Total time: $duration s"
+log "info" "Finished at: $FORMATTED"
+log "info" "Twitter $NAME version v$VERSION"
+log "info" "------------------------------------------------------------------------"
+# END: EXECUTE BUILD ------------------------------------------------------------------------------------
+

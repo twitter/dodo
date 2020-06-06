@@ -249,7 +249,6 @@ function echo_set_options {
           log "debug" "  versioned release = true"
           log "debug" "  release version   = $release_version"
           log "debug" "  phab-id           = $phab_id"
-
         else
           log "debug" "  snapshot release  = true"
         fi

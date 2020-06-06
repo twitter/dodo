@@ -12,7 +12,7 @@ env:
   PGP_SECRET: ${{ secrets.PGP_SECRET }}
   SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
   SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-  DRY_RUN: true
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 defaults:
   run:
     shell: bash
@@ -38,7 +38,7 @@ jobs:
         with:
           java-version: openjdk@1.8
       - uses: olafurpg/setup-gpg@v2
-      - name: setup/gpg-secret
+      - name: setup/gpg
         run: ${{ github.workspace }}/bin/gpg-init
       - name: setup/maven
         uses: whelk-io/maven-settings-xml-action@v4
@@ -56,59 +56,72 @@ jobs:
           path: util
       - name: release/util
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose util
+          ${{ github.workspace }}/bin/publish --snapshot --verbose util
         working-directory: ${{ github.workspace }}/util
       # checkout scrooge and publish
       - name: checkout/scrooge
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/scrooge
           ref: develop
           path: scrooge
       - name: release/scrooge
+        if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge
+          ${{ github.workspace }}/bin/publish --snapshot --verbose scrooge
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-sbt-plugin
       - name: release/scrooge-sbt-plugin
+        if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-sbt-plugin
+          ${{ github.workspace }}/bin/publish --snapshot --verbose scrooge-sbt-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-maven-plugin
       - name: release/scrooge-maven-plugin
+        if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-maven-plugin
+          ${{ github.workspace }}/bin/publish --snapshot --verbose scrooge-maven-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # checkout finagle and publish
       - name: checkout/finagle
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finagle
           ref: develop
           path: finagle
       - name: release/finagle
+        if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finagle
+          ${{ github.workspace }}/bin/publish --snapshot --verbose finagle
         working-directory: ${{ github.workspace }}/finagle
       # checkout twitter-server and publish
       - name: checkout/twitter-server
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/twitter-server
           ref: develop
           path: twitter-server
       - name: release/twitter-server
+        if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose twitter-server
+          ${{ github.workspace }}/bin/publish --snapshot --verbose twitter-server
         working-directory: ${{ github.workspace }}/twitter-server
       # checkout finatra and publish
       - name: checkout/finatra
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finatra
           ref: develop
           path: finatra
       - name: release/finatra
+        if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finatra
+          ${{ github.workspace }}/bin/publish --snapshot --verbose finatra
         working-directory: ${{ github.workspace }}/finatra
+      - name: slack/notification
+        if: ${{ always() }}
+        run: ${{ github.workspace }}/bin/slack --success ${{ success() }} --verbose

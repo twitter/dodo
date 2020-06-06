@@ -50,7 +50,7 @@ jobs:
         with:
           java-version: openjdk@1.8
       - uses: olafurpg/setup-gpg@v2
-      - name: setup/gpg-secret
+      - name: setup/gpg
         run: ${{ github.workspace }}/bin/gpg-init
       - name: setup/maven
         uses: whelk-io/maven-settings-xml-action@v4
