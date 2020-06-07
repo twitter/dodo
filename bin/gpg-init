@@ -18,13 +18,12 @@ SECONDS=0
 
 # DO NOT leak out the $PGP_SECRET in the output!
 printf -- "%s" "$PGP_SECRET" | gpg --import --no-tty --batch --yes
-printf "%s\n%s" "default-key $PGP_KEY" "pinentry-mode loopback" >  ~/.gnupg/gpg.conf
-printf "%s" 'allow-loopback-pinentry' > ~/.gnupg/gpg-agent.conf
+printf "%s" "default-key $PGP_KEY" >  ~/.gnupg/gpg.conf
 
 duration="$SECONDS"
 FORMATTED=$(date "+%YT%H:%M:%S%z")
 log "info" "------------------------------------------------------------------------"
-log "info" "INIT SUCCESS"
+log "info" "GPG INIT SUCCESS"
 log "info" "------------------------------------------------------------------------"
 log "info" "Total time: $duration s"
 log "info" "Finished at: $FORMATTED"
