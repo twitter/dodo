@@ -27,10 +27,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: dump/context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
       - uses: actions/checkout@v2.1.1
       - uses: actions/setup-java@v1
         with:
@@ -123,6 +119,9 @@ jobs:
         run: |
           ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose finatra
         working-directory: ${{ github.workspace }}/finatra
-      - name: slack/notification
-        if: ${{ always() }}
-        run: ${{ github.workspace }}/bin/slack --success ${{ success() }} --verbose
+      - name: slack/notification-failure
+        if: ${{ cancelled() || failure() }}
+        run: ${{ github.workspace }}/bin/slack --success false --verbose
+      - name: slack/notification-success
+        if: ${{ success() }}
+        run: ${{ github.workspace }}/bin/slack --success true --verbose

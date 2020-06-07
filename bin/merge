@@ -15,6 +15,7 @@ VERSION="20.5.0"
 NAME="Dodo Merge Branch"
 
 WORKSPACE=${GITHUB_WORKSPACE:-.}
+IS_CI=${CI:-false}
 
 # Validation project list
 project_list=( "util" "finagle" "scrooge" "twitter-server" "finatra" )
@@ -73,8 +74,8 @@ function echo_set_options {
         done
         log "debug" ""
         log "debug" "--- env ---"
-        log "debug" "  workspace = $WORKSPACE"
-        log "debug" "  ci = ${CI:-false}"
+        log "debug" "  WORKSPACE = $WORKSPACE"
+        log "debug" "  CI        = $IS_CI"
         log "debug" ""
         log "debug" "--- options ---"
         log "debug" "  project  = $project"

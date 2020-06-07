@@ -16,6 +16,7 @@ NAME="Dodo Slack Notifications"
 GITHUB_LOGO="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png?size=48"
 SLACK_URL=${SLACK_WEBHOOK:?}
 WORKSPACE=${GITHUB_WORKSPACE:-.}
+IS_CI=${CI:-false}
 
 # Initialize defaults
 success=true          # If the workflow run was successful.
@@ -64,8 +65,8 @@ function echo_set_options {
         done
         log "debug" ""
         log "debug" "--- env ---"
-        log "debug" "  workspace = $WORKSPACE"
-        log "debug" "  ci        = ${CI:-false}"
+        log "debug" "  WORKSPACE = $WORKSPACE"
+        log "debug" "  CI        = $IS_CI"
         log "debug" ""
         log "debug" "--- options ---"
         log "debug" "  success   = $success"
