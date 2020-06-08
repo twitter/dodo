@@ -80,6 +80,13 @@ jobs:
         run: |
           ${{ github.workspace }}/bin/publish --snapshot --dry-run $DRY_RUN --verbose scrooge-maven-plugin
         working-directory: ${{ github.workspace }}/scrooge
+      # publishing the scrooge-maven-plugin incorrectly leaves maven-metadata files at the base of the snapshot repository
+      - name: clean-up/scrooge-maven-plugin
+        if: ${{ success() }}
+        run: |
+          curl -X DELETE -s -o /dev/null -w "%{http_code}" -u ${SONATYPE_USERNAME}:${SONATYPE_PASSWORD} https://oss.sonatype.org/content/repositories/snapshots/com/twitter/maven-metadata.xml
+          curl -X DELETE -s -o /dev/null -w "%{http_code}" -u ${SONATYPE_USERNAME}:${SONATYPE_PASSWORD} https://oss.sonatype.org/content/repositories/snapshots/com/twitter/maven-metadata.xml.md5
+          curl -X DELETE -s -o /dev/null -w "%{http_code}" -u ${SONATYPE_USERNAME}:${SONATYPE_PASSWORD} https://oss.sonatype.org/content/repositories/snapshots/com/twitter/maven-metadata.xml.sha1
       # checkout finagle and publish
       - name: checkout/finagle
         if: ${{ success() }}
@@ -121,7 +128,7 @@ jobs:
         working-directory: ${{ github.workspace }}/finatra
       - name: slack/notification-failure
         if: ${{ cancelled() || failure() }}
-        run: ${{ github.workspace }}/bin/slack --success false --verbose
+        run: ${{ github.workspace }}/bin/slack --verbose --message "📸 Snapshot publishing \`failed\`." --color "#DA2700"
       - name: slack/notification-success
         if: ${{ success() }}
-        run: ${{ github.workspace }}/bin/slack --success true --verbose
+        run: ${{ github.workspace }}/bin/slack  --verbose --message "📸 Snapshot publishing \`successful\`." --color "#229954"

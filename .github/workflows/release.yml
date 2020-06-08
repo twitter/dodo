@@ -73,6 +73,7 @@ jobs:
         working-directory: ${{ github.workspace }}/util
       # checkout scrooge and release
       - name: checkout/scrooge
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/scrooge
@@ -80,23 +81,25 @@ jobs:
           ref: master
           path: scrooge
       - name: release/scrooge
+        if: ${{ success() }}
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-sbt-plugin
       - name: release/scrooge-sbt-plugin
-        if: ${{ github.event.client_payload.scrooge_sbt_plugin }}
+        if: ${{ success() && github.event.client_payload.scrooge_sbt_plugin }}
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-sbt-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-maven-plugin
       - name: release/scrooge-maven-plugin
-        if: ${{ github.event.client_payload.scrooge_maven_plugin }}
+        if: ${{ success() && github.event.client_payload.scrooge_maven_plugin }}
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-maven-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # checkout finagle and release
       - name: checkout/finagle
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finagle
@@ -104,11 +107,13 @@ jobs:
           ref: master
           path: finagle
       - name: release/finagle
+        if: ${{ success() }}
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle
         working-directory: ${{ github.workspace }}/finagle
       # checkout twitter-server and release
       - name: checkout/twitter-server
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/twitter-server
@@ -116,11 +121,13 @@ jobs:
           ref: master
           path: twitter-server
       - name: release/twitter-server
+        if: ${{ success() }}
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose twitter-server
         working-directory: ${{ github.workspace }}/twitter-server
       # checkout finatra and release
       - name: checkout/finatra
+        if: ${{ success() }}
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/finatra
@@ -128,6 +135,13 @@ jobs:
           ref: master
           path: finatra
       - name: release/finatra
+        if: ${{ success() }}
         run: |
           ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finatra
         working-directory: ${{ github.workspace }}/finatra
+      - name: slack/notification-failure
+        if: ${{ cancelled() || failure() }}
+        run: ${{ github.workspace }}/bin/slack --verbose --message "🐣 Versioned release \`failed\`." --color "#DA2700"
+      - name: slack/notification-success
+        if: ${{ success() }}
+        run: ${{ github.workspace }}/bin/slack  --verbose --message "🐣 Versioned release \`successful\`." --color "#229954"
