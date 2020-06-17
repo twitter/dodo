@@ -159,7 +159,7 @@ function clean_ivy {
             clean_ivy_command="rm -f $d > /dev/null 2>&1"
             log "info" "$clean_ivy_command"
             if [[ "$dry_run" != true ]]; then
-              "$clean_ivy_command"
+              eval "$clean_ivy_command"
             fi
           fi
         done
