@@ -105,7 +105,7 @@ jobs:
           path: scrooge-gh-pages
       - name: publish/scrooge-gh-pages
         run: |
-          git rm -fr .
+          git rm -fr --ignore-unmatch .
           touch .nojekyll
           cp -r ${{ github.workspace }}/scrooge/doc/target/site/* .
           git add .
@@ -177,7 +177,7 @@ jobs:
           path: twitter-server-gh-pages
       - name: publish/twitter-server-gh-pages
         run: |
-          git rm -fr .
+          git rm -fr --ignore-unmatch .
           touch .nojekyll
           cp -r ${{ github.workspace }}/twitter-server/doc/target/site/* .
           git add .
@@ -212,7 +212,7 @@ jobs:
           path: finatra-gh-pages
       - name: publish/finatra-gh-pages
         run: |
-          git rm -fr .
+          git rm -fr --ignore-unmatch .
           touch .nojekyll
           cp -r ${{ github.workspace }}/finatra/doc/target/site/* .
           cp -r ${{ github.workspace }}/finatra/target/scala-$SCALA_VERSION/unidoc/ scaladocs/
