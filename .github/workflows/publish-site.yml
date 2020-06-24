@@ -75,7 +75,7 @@ jobs:
           rm -fr guide/
           cp -r ${{ github.workspace }}/util/doc/target/site/ guide/
           git add .
-          git commit -m "site publish by $API_USER"
+          git commit --allow-empty -m "site publish by $API_USER"
           git diff --name-only origin/gh-pages gh-pages
         working-directory: ${{ github.workspace }}/util-gh-pages
       - name: push/util-gh-pages
@@ -109,7 +109,7 @@ jobs:
           touch .nojekyll
           cp -r ${{ github.workspace }}/scrooge/doc/target/site/* .
           git add .
-          git commit -m "site publish by $API_USER"
+          git commit --allow-empty -m "site publish by $API_USER"
           git diff --name-only origin/gh-pages gh-pages
         working-directory: ${{ github.workspace }}/scrooge-gh-pages
       - name: push/scrooge-gh-pages
@@ -147,7 +147,7 @@ jobs:
           rm -fr guide/
           cp -r ${{ github.workspace }}/finagle/doc/target/site/ guide/
           git add .
-          git commit -m "site publish by $API_USER"
+          git commit --allow-empty -m "site publish by $API_USER"
           git diff --name-only origin/gh-pages gh-pages
         working-directory: ${{ github.workspace }}/finagle-gh-pages
       - name: push/finagle-gh-pages
@@ -181,7 +181,7 @@ jobs:
           touch .nojekyll
           cp -r ${{ github.workspace }}/twitter-server/doc/target/site/* .
           git add .
-          git commit -m "site publish by $API_USER"
+          git commit --allow-empty -m "site publish by $API_USER"
           git diff --name-only origin/gh-pages gh-pages
         working-directory: ${{ github.workspace }}/twitter-server-gh-pages
       - name: push/twitter-server-gh-pages
@@ -217,7 +217,7 @@ jobs:
           cp -r ${{ github.workspace }}/finatra/doc/target/site/* .
           cp -r ${{ github.workspace }}/finatra/target/scala-$SCALA_VERSION/unidoc/ scaladocs/
           git add .
-          git commit -m "site publish by $API_USER"
+          git commit --allow-empty -m "site publish by $API_USER"
           git diff --name-only origin/gh-pages gh-pages
         working-directory: ${{ github.workspace }}/finatra-gh-pages
       - name: push/finatra-gh-pages
