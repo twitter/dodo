@@ -27,6 +27,7 @@ env:
   BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
   API_USER: ${{ secrets.API_USER }}
   API_KEY: ${{ secrets.API_KEY }}
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 defaults:
   run:
     shell: bash
