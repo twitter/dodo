@@ -20,7 +20,7 @@ env:
   REMOTE_BASE: "https://${API_USER}:${API_KEY}@github.com/twitter"
 defaults:
   run:
-    shell: bash
+    shell: bash --noprofile --norc -eux -o pipefail {0}
 on:
   repository_dispatch:
     types: [publish-site]
