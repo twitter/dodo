@@ -12,17 +12,17 @@ When working with the [Finagle][finagle] family of Twitter OSS projects it is so
 
 This repository contains a script to help users build and test the [Finagle][finagle] family of open-source projects. This includes the projects:
 
-[Util][util]  
-[Scrooge][scrooge]  
-[Finagle][finagle]  
-[TwitterServer][twitter-server]  
-[Finatra][finatra]  
+[Util][util]
+[Scrooge][scrooge]
+[Finagle][finagle]
+[TwitterServer][twitter-server]
+[Finatra][finatra]
 
 ### Usage
 
-The builder will build and locally publish via [sbt][sbt] all the Twitter OSS dependencies of the given target project (and optionally the given project as well). 
+The builder will build and locally publish via [sbt][sbt] all the Twitter OSS dependencies of the given target project (and optionally the given project as well).
 
-There are two main modes to usage: `local` or `remote`. By default Dodo works in the `remote` mode, meaning it assumes that the Twitter OSS dependencies are meant to be downloaded from their remote locations in [Github](https://github.com/twitter). Dodo attempts to be somewhat smart and not clone repositories from Github if it already has a copy that is up-to-date with the latest SHA found in the remote repository. 
+There are two main modes to usage: `local` or `remote`. By default Dodo works in the `remote` mode, meaning it assumes that the Twitter OSS dependencies are meant to be downloaded from their remote locations in [Github](https://github.com/twitter). Dodo attempts to be somewhat smart and not clone repositories from Github if it already has a copy that is up-to-date with the latest SHA found in the remote repository.
 
 Additionally, in `remote` mode Dodo attempts to cache commands it has run against the local SHA. If it finds that it has run the given commands against the currently cached SHA for a repository it will not run them again. See the [Clean Up](#clean-up) section for more information.
 
@@ -39,31 +39,31 @@ The above command will clone all necessary Github Twitter OSS repos for building
 If you want to pass an option that take a value, e.g., `--sbt-version`, use a space. E.g.,
 
 ```bash
-$ ./dodo/bin/build --no-test --scala-version 2.12.4 finagle
+$ ./dodo/bin/build --no-test --scala-version 2.12.11 finagle
 ```
 
 Builder options:
 
 ```
---all             Build all projects in the DAG list (overrides --include). 
+--all             Build all projects in the DAG list (overrides --include).
                   Default: false.
 --clean           Delete any sbt-launch.jar and run `sbt clean` before running other sbt commands. Default: false.
---clean-files     Delete all Dodo caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, 
+--clean-files     Delete all Dodo caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones,
                   and $DODO_DIRECTORY/builds. Default: false.
 --include         Include building of the given project. Default: false.
---no-test         Do not run tests (will still compile tests via test:compile). 
+--no-test         Do not run tests (will still compile tests via test:compile).
                   Default: false (run tests).
 --scala-version   If set, do not cross-compile instead use this specific version for building all projects.
                   Default: unset (cross-compile).
 --clone-dir       Directory into which to clone remotes. Default: $HOME/.dodo/clones
---local           Build source from local filesystem instead of Github. 
+--local           Build source from local filesystem instead of Github.
                   Default: false (use Github sources).
 --branch          Branch to use when building from Github sources. Default: develop.
 --proxy           Base URL from which to resolve artifacts when working offline, (e.g., the sbt-launch.jar),
-                  Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set 
+                  Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set
                   --local and --sbt-version with this option. Default: unset.
 --publish-m2      Also publish artifacts to the local ~/.m2 repository. Default: false.
---sbt-version     The sbt version to use when downloading the sbt launch jar. 
+--sbt-version     The sbt version to use when downloading the sbt launch jar.
                   Default: unset, the project defined sbt version will used.
 --dry-run         Output, but do not execute the sbt build commands. If using remotes
                   they will still be cloned. Default: false.
