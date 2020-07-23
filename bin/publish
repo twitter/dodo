@@ -137,16 +137,16 @@ function release {
     log "info" ""
 
     if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
-      # git fetch branches with a depth to the timestamp of the current master HEAD
+      # git fetch branches with a depth to the timestamp of the current release HEAD
       log "info" "--- Fetch develop branch commits ---"
       if [[ "$IS_CI" = true ]]; then
         fetch_branches
       fi
-      # update master from develop branch
-      log "info" "--- Merging develop branch commits into master branch ---"
+      # update release from develop branch
+      log "info" "--- Merging develop branch commits into release branch ---"
       log "info" ""
       if [[ "$IS_CI" = true ]]; then
-        merge_master
+        merge_release
       fi
     fi
     local -r version=$(parse_version "$project")
@@ -160,11 +160,11 @@ function release {
       fi
     fi
 
-    # checkout master and run commands
+    # checkout release and run commands
     log "info" "--- Running release commands ---"
     log "info" ""
     if [[ "$dry_run" = false ]]; then
-      git checkout master > /dev/null 2>&1; git pull > /dev/null 2>&1
+      git checkout release > /dev/null 2>&1; git pull > /dev/null 2>&1
     fi
     run_commands "$(array_get "${project//-/}" commands)"
 
@@ -177,15 +177,15 @@ function release {
       if [[ "$dry_run" = false ]]; then
         eval "$reset_cmd"
       fi
-      # push tags when on master (for release)
+      # push tags when on release (for release)
       log "info" ""
-      log "info" "--- Pushing $project-$version tag to origin/master ---"
-      push_tag_and_master
+      log "info" "--- Pushing $project-$version tag to origin/release ---"
+      push_tag_and_release
       github_release
     fi
 }
 
-function push_tag_and_master {
+function push_tag_and_release {
     repository="$project"
     if [[ "$project" = scrooge* ]]; then
       repository="scrooge"
@@ -207,17 +207,17 @@ function push_tag_and_master {
       if [[ "$dry_run" = false ]]; then
           eval "$push_tag"
       fi
-   
+
       # we don't need to force push here--if we're up to date, it will still return 0
-      local -r push_master="git push $remote HEAD" # pushes HEAD of the current branch to the branch with the same name on the remote
-      log "info" "$push_master"                    # we're currently in master, thus this should push local master to remote master
+      local -r push_release="git push $remote HEAD" # pushes HEAD of the current branch to the branch with the same name on the remote
+      log "info" "$push_release"                    # we're currently in release, thus this should push local release to remote release
       if [[ "$dry_run" = false ]]; then
-          eval "$push_master"
+          eval "$push_release"
       fi
     fi
 }
 
-# only done after push_tag_and_master, requires API_KEY env var to be set.
+# only done after push_tag_and_release, requires API_KEY env var to be set.
 function github_release {
     if [[ -n "$GITHUB_API_TOKEN" ]] && [[ "$GITHUB_API_TOKEN" != "XXXXX" ]]; then
         release_name="$(echo "$project" | awk '{$1=toupper(substr($1,0,1))substr($1,2)}1') $version"

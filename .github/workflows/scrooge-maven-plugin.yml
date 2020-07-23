@@ -48,13 +48,13 @@ jobs:
         uses: whelk-io/maven-settings-xml-action@v4
         with:
           servers: '[{ "id": "sonatype-nexus-staging", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }]'
-      # ensure upstreams have merged develop branch into master
+      # ensure upstreams have merged develop branch into release
       - name: checkout/util
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/util
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: util
       - name: merge/util
         run: |
@@ -65,7 +65,7 @@ jobs:
         with:
           repository: twitter/finagle
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: finagle
       - name: merge/finagle
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: dodo/build
         uses: cacoco/dodo-build@v2
         with:
-          branch: master
+          branch: release
           project: scrooge
           no-test: true
           publish-m2: true
@@ -87,7 +87,7 @@ jobs:
         with:
           repository: twitter/scrooge
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: scrooge
       - name: release/scrooge-maven-plugin
         run: |

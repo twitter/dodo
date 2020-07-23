@@ -6,7 +6,7 @@ set -euo pipefail
 source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
 
 #######################################################################
-# Script for ensuring the master branch of the given project's dependencies
+# Script for ensuring the release branch of the given project's dependencies
 # have all been merged with their respective develop branch..
 #
 # See: print_usage function for usage.
@@ -38,24 +38,24 @@ function print_usage {
 }
 
 function merge {
-  # git fetch branches with a depth to the timestamp of the current master HEAD
+  # git fetch branches with a depth to the timestamp of the current release HEAD
   log "info" "--- Fetch develop branch commits ---"
   fetch_branches
-  # update master from develop branch
-  log "info" "--- Merging develop branch commits into master branch ---"
+  # update release from develop branch
+  log "info" "--- Merging develop branch commits into release branch ---"
   log "info" ""
-  merge_master
-  # push master branch to remote
+  merge_release
+  # push release branch to remote
   repository="$project"
   if [[ "$project" = scrooge* ]]; then
     repository="scrooge"
   fi
   remote="https://${API_USER}:${API_KEY}@github.com/twitter/${repository}.git"
   # we don't need to force push here--if we're up to date, it will still return 0
-  local -r push_master="git push $remote HEAD"
-  log "info" "$push_master"
+  local -r push_release="git push $remote HEAD"
+  log "info" "$push_release"
   if [[ "$dry_run" = false ]]; then
-      eval "$push_master"
+      eval "$push_release"
   fi
 }
 

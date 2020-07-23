@@ -2,7 +2,7 @@
 set -euo pipefail
 
 #######################################################################
-# Script for building Twitter OSS libraries based on either their 
+# Script for building Twitter OSS libraries based on either their
 # Github source or from locally checked out copies.
 #
 # The expected usage of this script includes execution via cURL, thus
@@ -181,7 +181,7 @@ function sbt_update {
         update_command="cp $sbt_jar ./sbt-launch.jar;$update_command"
     fi
     log "info" "$update_command"
-    if [[ "$dry_run" != true ]]; then 
+    if [[ "$dry_run" != true ]]; then
         retry 3 "$update_command"
     fi
 }
@@ -247,19 +247,19 @@ function run_commands {
                 command="${command//.\/sbt /./sbt --warn }" # set sbt log level to warn
             fi
             log "info" "$command"
-            if [[ "$dry_run" != true ]]; then 
+            if [[ "$dry_run" != true ]]; then
                 retry 3 "$command"
             fi
         done
         # clean the project since we publish artifacts we do not need to keep classes and other detritus
-        if [[ "$dry_run" != true ]]; then 
+        if [[ "$dry_run" != true ]]; then
             retry 3 "./sbt clean cleanFiles"
         fi
         record_build "$project" "$commands_hash"
     else
         log "info" "Using previously built results..."
         log "info" " "
-        if [[ "$remote" = true ]]; then 
+        if [[ "$remote" = true ]]; then
             details="built-sha @ $(cat "$build_home/$project/$commands_hash")"
             log "info" "--- $details ---"
         fi
@@ -301,11 +301,11 @@ function clone {
             log "info" " "
         else
             cd "$clone_home/$project_name"
-            # are we in the branch we expect? 
+            # are we in the branch we expect?
             local -r local_branch=$(git rev-parse --abbrev-ref HEAD)
             if [[ "$local_branch" != "$branch" ]]; then
                 # need to re-clone with correct branch
-                log "info" "Requested branch: $branch is different than cached cloned branch: $local_branch. Deleting clone and re-cloning branch $branch."    
+                log "info" "Requested branch: $branch is different than cached cloned branch: $local_branch. Deleting clone and re-cloning branch $branch."
                 cd "$clone_home"; rm -fr "$project_name" > /dev/null 2>&1
                 git clone https://github.com/twitter/"$project_name".git --branch "$branch" --depth=1
                 cd "$clone_home/$project_name"
@@ -329,13 +329,13 @@ function clone {
     fi
 }
 
-function build {    
+function build {
     local project=$1
     local -r project_name=$(array_get "${project//-/}" name)
     clone "$project_name"
     # cd into project directory; run commands; cd back
     cd "$project_name"
-    
+
     details="local"
     if [[ "$remote" = true ]]; then details="git-sha @ $(cat "$cache_home/$project_name")"; fi
     log "info" "------------------------------------------------------------------------"
@@ -377,15 +377,15 @@ function download_sbt_launch_jar {
 function check_offline {
     # if we're offline, download the sbt-launch.jar to use in building.
     if [[ "$offline" = true ]]; then
-        download_sbt_launch_jar    
-    fi    
+        download_sbt_launch_jar
+    fi
 }
 
 function build_projects {
     local project=$1
     local to_build=()
     check_offline
-    
+
     log "info" "Determining projects..."
     # loop until we find the matching project or all
     for current in "${projects[@]}"; do
@@ -445,19 +445,19 @@ function print_usage {
   --all             Build all projects in the DAG list (overrides --include). Default: false.
   --clean           Delete any sbt-launch.jar and run \"sbt clean\" before running other sbt commands.
                     Default: false.
-  --clean-files     Delete all $NAME caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones, 
+  --clean-files     Delete all $NAME caches, e.g., $DODO_DIRECTORY/caches, $DODO_DIRECTORY/clones,
                     and $DODO_DIRECTORY/builds. Default: false.
   --include         Include building of the given project. Default: false.
-  --no-test         Do not run tests (will still compile tests via test:compile). 
+  --no-test         Do not run tests (will still compile tests via test:compile).
                     Default: false (run tests).
   --scala-version   If set, do not cross-compile instead use this specific version for building all projects.
                     Default: unset (cross-compile).
   --clone-dir       Directory into which to clone remotes. Default: $HOME/.dodo/clones
-  --local           Build source from local filesystem instead of Github. 
+  --local           Build source from local filesystem instead of Github.
                     Default: false (use Github sources).
   --branch          Branch to use when building from Github sources. Default: develop.
   --proxy           Base URL from which to resolve artifacts when working offline, (e.g., the sbt-launch.jar),
-                    Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set 
+                    Example: --proxy https://my.internal.company.repo/sbt-repo. NOTE: you MUST set
                     --local and --sbt-version with this option. Default: unset.
   --publish-m2      Also publish artifacts to the local ~/.m2 repository. Default: false.
   --sbt-version     The sbt version to use when downloading the sbt launch jar.
@@ -567,8 +567,8 @@ fi
 if [[ "$build_all" = true ]] && [[ "$include_project" = true ]]; then
     log "warn" "Ignoring \"--include\" flag as \"--all\" was specified." >&2
 fi
-if [[ "$branch" != "develop" ]] && [[ "$branch" != "master" ]]; then
-    log "error" "Branch can only be one of 'develop' or 'master'." >&2
+if [[ "$branch" != "develop" ]] && [[ "$branch" != "release" ]]; then
+    log "error" "Branch can only be one of 'develop' or 'release'." >&2
     print_usage >&2
     exit 1
 fi

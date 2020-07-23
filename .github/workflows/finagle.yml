@@ -47,13 +47,13 @@ jobs:
       - name: setup/sbt
         run: |
           cp -r ${{ github.workspace }}/bin/.sbt ~/.sbt
-      # ensure upstreams have merged develop branch into master
+      # ensure upstreams have merged develop branch into release
       - name: checkout/util
         uses: actions/checkout@v2.1.1
         with:
           repository: twitter/util
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: util
       - name: merge/util
         run: |
@@ -64,7 +64,7 @@ jobs:
         with:
           repository: twitter/scrooge
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: scrooge
       - name: merge/scrooge
         run: |
@@ -74,7 +74,7 @@ jobs:
       - name: dodo/build
         uses: cacoco/dodo-build@v2
         with:
-          branch: master
+          branch: release
           project: finagle
           no-test: true
           publish-m2: true
@@ -86,7 +86,7 @@ jobs:
         with:
           repository: twitter/finagle
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: finagle
       - name: release/finagle
         run: |

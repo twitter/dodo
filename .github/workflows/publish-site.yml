@@ -52,7 +52,7 @@ jobs:
         with:
           repository: twitter/util
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: util
       - name: generate/util
         run: |
@@ -90,7 +90,7 @@ jobs:
         with:
           repository: twitter/scrooge
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: scrooge
       - name: generate/scrooge
         run: |
@@ -124,7 +124,7 @@ jobs:
         with:
           repository: twitter/finagle
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: finagle
       - name: generate/finagle
         run: |
@@ -162,7 +162,7 @@ jobs:
         with:
           repository: twitter/twitter-server
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: twitter-server
       - name: generate/twitter-server
         run: |
@@ -196,7 +196,7 @@ jobs:
         with:
           repository: twitter/finatra
           token: ${{ secrets.API_KEY }}
-          ref: master
+          ref: release
           path: finatra
       - name: generate/finatra
         run: |

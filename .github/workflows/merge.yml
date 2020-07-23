@@ -1,6 +1,6 @@
-name: merge-master
+name: merge-release
 
-# Merges the 'develop' branch into master on pushes to 'develop'
+# Merges the 'develop' branch into release on pushes to 'develop'
 defaults:
   run:
     shell: bash
@@ -20,5 +20,5 @@ jobs:
         run: |
           develop_head=$(git rev-parse HEAD)
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-          git checkout master && git merge "$develop_head" && git push -f origin master
+          git checkout release && git merge "$develop_head" && git push -f origin release
 
