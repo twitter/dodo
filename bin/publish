@@ -112,12 +112,21 @@ function release_snapshot {
     if [[ "$dry_run" = true ]]; then details=" (dry-run)"; fi
 
     local -r version=$(parse_version "$project")
-    log "info" ""
-    log "info" "------------------------------------------------------------------------"
-    log "info" "Snapshot Release $project v$version${details}"
-    log "info" "------------------------------------------------------------------------"
-    log "info" ""
-    run_commands "$(array_get "${project//-/}" commands)"
+    if [[ "$version" == *-SNAPSHOT ]]; then
+      log "info" ""
+      log "info" "------------------------------------------------------------------------"
+      log "info" "Snapshot Release $project v$version${details}"
+      log "info" "------------------------------------------------------------------------"
+      log "info" ""
+      run_commands "$(array_get "${project//-/}" commands)"
+    else
+      log "error" ""
+      log "error" "------------------------------------------------------------------------"
+      log "error" "SKIPPING Snapshot Release $project v$version${details}"
+      log "error" "Snapshot release requested but project version v$version$ is not a -SNAPSHOT."
+      log "error" "------------------------------------------------------------------------"
+      log "error" ""
+    fi
 }
 
 function release {
