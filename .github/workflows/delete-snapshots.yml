@@ -1,0 +1,46 @@
+name: delete-snapshots
+
+# Deletes published snapshot releases of twitter/util, twitter/scrooge, twitter/finagle, 
+# twitter/twitter-server, and twitter/finatra.
+# 
+# Expects a repository dispatch event: https://developer.github.com/v3/repos/#create-a-repository-dispatch-event
+# in the form of JSON data POST to /repos/twitter/dodo/dispatches:
+#
+# {
+#  "event_type": "delete-snapshots",
+#  "client_payload": {
+#    "version": "20.7.0",
+#    "dry_run": true
+#  }
+# }
+#
+env:
+  JAVA_OPTS: "-Dsbt.log.noformat=true"
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  API_USER: ${{ secrets.API_USER }}
+  API_KEY: ${{ secrets.API_KEY }}
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+defaults:
+  run:
+    shell: bash
+on:
+  repository_dispatch:
+    types: [delete-snapshots]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dump/context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: delete/snapshots
+        run: ${{ github.workspace }}/bin/delete-snapshots --dry-run ${{ github.event.client_payload.dry_run }} --verbose ${{ github.event.client_payload.version }}
+      - name: slack/notification-failure
+        if: ${{ cancelled() || failure() }}
+        run: ${{ github.workspace }}/bin/slack --verbose --message "❌ ${{ github.event.client_payload.version }} Snapshot cleanup \`failed\`." --color "#DA2700"
+      - name: slack/notification-success
+        if: ${{ success() }}
+        run: ${{ github.workspace }}/bin/slack  --verbose --message "❌ ${{ github.event.client_payload.version }} Snapshot cleanup \`successful\`." --color "#229954"

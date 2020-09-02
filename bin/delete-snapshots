@@ -1,0 +1,195 @@
+#!/bin/bash
+set -euo pipefail
+
+# shellcheck disable=SC1091
+# shellcheck disable=SC1090
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functions"
+
+#######################################################################
+# Script for cleaning up Twitter OSS snapshots from Sonatype. Note this
+# is only meant to run when 'IS_CI' is true.
+#
+# See: print_usage function for usage.
+# NOTE: this script is expected to be run in the directory of the
+# project being released.
+#######################################################################
+VERSION="20.8.1"
+NAME="Dodo Snapshot Cleanup"
+
+# Validation project list in roughly "reverse" order. Start at leaves and move inward.
+project_list=( "finatra" "inject" "twitter-server" "finagle" "scrooge-sbt-plugin" "scrooge-maven-plugin" "scrooge" "util" )
+WORKSPACE=${GITHUB_WORKSPACE:-.}
+IS_CI=${CI:-false}
+
+# Initialize defaults
+dry_run=false           # Output but don't execute the release commands
+verbose=false           # prints build configuration options and other verbose statements
+
+function print_usage() {
+    echo "USAGE: $0 --dry-run true --verbose 17.12.0"
+    echo "Options:
+  --dry-run         Output, but do not execute the deletion.
+  --verbose         Run in verbose mode. Default: false.
+  --help            Print usage."
+}
+
+
+function delete_snapshot() {
+    local -r project=$1
+    local -r version=$2
+    if [[ "$version" == *-SNAPSHOT ]]; then
+        local -r sub_directory="/${version}"
+    else
+        local -r sub_directory="/${version}-SNAPSHOT"
+    fi  
+
+    local -r delete_curl_cmd="curl -sD - -o /dev/null -X DELETE -w \"\n%{http_code}\n\" -u $SONATYPE_USERNAME:$SONATYPE_PASSWORD https://oss.sonatype.org/content/repositories/snapshots/com/twitter/${project}${sub_directory}"
+    log "info" "curl -X DELETE https://oss.sonatype.org/content/repositories/snapshots/com/twitter/${project}${sub_directory}"
+    if [[ "$dry_run" = false ]]; then
+        local head=true
+        local -a headers=()
+        local -a status_code=()
+        while IFS= read -r line; do 
+            if $head; then 
+                if [[ -z $line ]]; then 
+                    head=false
+                else
+                    headers+=("$line")
+                fi
+            else
+                status_code+=("$line")
+            fi
+        done < <(eval "$delete_curl_cmd" | sed 's/\r$//')
+
+        printf "[debug] %s\n" "${headers[@]}"
+        if [[ "$status_code" != "20"* ]] && [[ "$status_code" != "404" ]]; then
+            log "error" "Unable to delete ${project}${sub_directory}, HTTP status code: ${status_code}"
+            return 1
+        fi
+    fi
+}
+
+function delete_snapshots() {
+    local -r max_delete_attempts=3
+    local -r version=$1
+    local -r get_project_cmd="curl -s -X GET -H \"Accept: application/json\" https://oss.sonatype.org/service/local/repositories/snapshots/content/com/twitter/ | jq '[ .[] | .[] | .text ]' | grep \"util-\|scrooge-\|finagle-\|twitter-server-\|finatra-\|inject-\" | sort -u | tr -d ' '"
+
+    log "info" ""
+    log "info" "------------------------------------------------------------------------"
+    log "info" "Finding relevant projects from Sonatype..."
+    log "info" "------------------------------------------------------------------------"
+    log "info" ""
+    local projects=$(eval "$get_project_cmd")
+    projects=$(echo "$projects" | tr -d ' ' | tr -d '"' | tr -d ',')
+    log "info" "Found $(echo "$projects" | wc -l | tr -d ' ') projects."
+    if [[ "$verbose" == true ]]; then
+        log "debug" "------------------------------------------------------------------------"
+        printf "%s\n" "${projects[@]}"
+        log "debug" "------------------------------------------------------------------------"
+        log "debug" ""
+    fi
+
+    if [[ -n "$projects" ]]; then
+        for project in ${project_list[@]}; do
+            log "info" ""
+            log "info" "------------------------------------------------------------------------"
+            log "info" "Cleaning up snapshot releases for $project $version"
+            log "info" "------------------------------------------------------------------------"
+            log "info" ""
+            for to_delete in ${projects[@]}; do
+                if [[ "$to_delete" == "$project"* ]]; then
+                    local delete_attempt=1
+                    until delete_snapshot "$to_delete" "$version"; do
+                        if (( delete_attempt == max_delete_attempts ))
+                        then
+                            log "info" "Command failed, max attempts: $max_delete_attempts exceeded."
+                            return 1
+                        else
+                            log "info" "Command failed. Retrying..."
+                            ((delete_attempt++))
+                            sleep 1
+                        fi
+                    done
+                fi 
+            done
+        done
+    fi
+}
+
+function echo_set_options() {
+    if [[ "$verbose" = true ]]; then
+        log "debug" "------------------------------------------------------------------------"
+        current_date=$(date "+%YT%H:%M:%S%z")
+        log "debug" "Twitter $NAME v$VERSION ($current_date)"
+        log "debug" ""
+        log "debug" "--- java version ---"
+        version=$(java -version 2>&1); version_lines=$(echo java -version 2>&1 | wc -l)
+        i=1; while [ "$i" -le "$version_lines" ]; do
+            line=$(echo "$version" | head -n $i | tail -n 1)
+            log "debug" "  $line"
+            i=$((i + 1))
+        done
+        log "debug" ""
+        log "debug" "--- env ---"
+        log "debug" "  WORKSPACE = $WORKSPACE"
+        log "debug" "  CI        = $IS_CI"
+        log "debug" ""
+        log "debug" "--- options ---"
+        log "debug" "  version   = $snapshot_version"
+        log "debug" "  dry-run   = $dry_run"
+        log "debug" ""
+    fi
+}
+
+# BEGIN: OPTION PARSING AND VALIDATION ------------------------------------------------------------------
+# check for jq installed -- used for parsing Sonatype results
+jq_installed=$(command -v jq)
+if [[ -z "$jq_installed" ]]; then log "error" "JQ required to run. Please install. On mac OSX, \"brew install jq\" " >&2; exit 1; fi
+# Simple option parsing. We could use getopts but rather use "long"
+# names only. And this is position-agnostic to the options, e.g.,
+# these options can occur before or after the main arguments.
+shift_count="0"
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--dry-run")        dry_run_input=$1; ((shift_count+=1)) ;;
+    "--verbose")        verbose=true ;;
+    "--help")           print_usage >&2; exit ;;
+    *)                  check_arg $arg;set -- "$@" "$arg"
+  esac
+done
+# parse dry run bool
+if [[ "$dry_run_input" == "true" ]] || [[ "$dry_run_input" == "1" ]]; then dry_run=true; fi
+# if local, set dry run to true
+if [[ "$IS_CI" = false ]]; then dry_run=true; fi
+# read and validate $project
+snapshot_version="unset"
+# need to shift by the number of params set above with values
+if [[ "$shift_count" != "0" ]]; then shift $shift_count; fi
+if [[ -z "$*" ]]; then print_usage >&2; exit 1; fi
+# Read in remaining option -- which should be the vrsion.
+snapshot_version="$1"
+if [[ "$dry_run" = false ]] && [[ -z "$SONATYPE_PASSWORD" ]]; then
+    log "error" "SONATYPE_PASSWORD environment variable MUST be set. "
+    exit 1
+fi
+if [[ "$dry_run" = false ]] && [[ -z "$SONATYPE_USERNAME" ]]; then
+    log "error" "SONATYPE_USERNAME environment variable MUST be set. "
+    exit 1
+fi
+# END: OPTION PARSING AND VALIDATION --------------------------------------------------------------------
+SECONDS=0
+
+echo_set_options
+delete_snapshots "$snapshot_version"
+
+duration="$SECONDS"
+FORMATTED=$(date "+%YT%H:%M:%S%z")
+log "info" ""
+log "info" "------------------------------------------------------------------------"
+log "info" "SNAPSHOT DELETION SCRIPT SUCCESS"
+log "info" "------------------------------------------------------------------------"
+log "info" "Total time: $duration s"
+log "info" "Finished at: $FORMATTED"
+log "info" "Twitter $NAME version v$VERSION"
+log "info" "------------------------------------------------------------------------"
