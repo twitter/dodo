@@ -29,7 +29,7 @@ on:
     types: [delete-snapshots]
 
 jobs:
-  release:
+  delete-snapshots:
     runs-on: ubuntu-latest
     steps:
       - name: dump/context
