@@ -43,29 +43,15 @@ function delete_snapshot() {
         local -r sub_directory="/${version}-SNAPSHOT"
     fi  
 
-    local -r delete_curl_cmd="curl -sD - -o /dev/null -w \"\n%{http_code}\n\" -X DELETE -u $SONATYPE_USERNAME:$SONATYPE_PASSWORD https://oss.sonatype.org/content/repositories/snapshots/com/twitter/${project}${sub_directory}"
+    local -r delete_curl_cmd="curl -s -o /dev/null -w \"%{http_code}\n\" -X DELETE -u $SONATYPE_USERNAME:$SONATYPE_PASSWORD https://oss.sonatype.org/content/repositories/snapshots/com/twitter/${project}${sub_directory}"
     log "info" "curl -X DELETE https://oss.sonatype.org/content/repositories/snapshots/com/twitter/${project}${sub_directory}"
     if [[ "$dry_run" = false ]]; then
-        local head=true
-        local -a headers=()
-        local -a status_code=()
-        while IFS= read -r line; do 
-            if $head; then 
-                if [[ -z "$line" ]]; then 
-                    head=false
-                else
-                    headers+=("$line")
-                fi
-            else
-                status_code+=("$line")
-            fi
-        done < <(eval "$delete_curl_cmd" | sed 's/\r$//')
-
-        status=${status_code[0]}
-        printf "[debug] %s\n" "${headers[@]}"
-        if [[ "$status" != "20"* ]] && [[ "$status" != "404" ]]; then
-            log "error" "Unable to delete ${project}${sub_directory}, HTTP status code: ${status}"
+        status_code=$(eval "$delete_curl_cmd")
+        if [[ "$status_code" != "20"* ]] && [[ "$status_code" != "404" ]]; then
+            log "error" "Unable to delete ${project}${sub_directory}, HTTP status code: ${status_code}"
             return 1
+        elif [[ "$verbose" == true ]]; then
+            log "info" "Successfully deleted ${project}${sub_directory}, HTTP status code: ${status_code}"
         fi
     fi
 }
