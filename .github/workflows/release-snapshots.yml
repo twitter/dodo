@@ -12,19 +12,21 @@ env:
   PGP_SECRET: ${{ secrets.PGP_SECRET }}
   SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
   SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-  DRY_RUN: false
+  DRY_RUN: ${{ github.event.client_payload.dry_run || 'false' }}
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 defaults:
   run:
     shell: bash
 on:
+  repository_dispatch:
+    types: [release-snapshots]
   schedule:
     # * is a special character in YAML so you have to quote this string
     # run every night at 8AM UTC (1AM PT)
     - cron: '0 8 * * *'
 
 jobs:
-  publish:
+  release-snapshots:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.1.1
