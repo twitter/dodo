@@ -41,7 +41,7 @@ jobs:
         run: ${{ github.workspace }}/bin/delete-snapshots --dry-run ${{ github.event.client_payload.dry_run }} --verbose ${{ github.event.client_payload.version }}
       - name: slack/notification-failure
         if: ${{ cancelled() || failure() }}
-        run: ${{ github.workspace }}/bin/slack --verbose --message "❌ ${{ github.event.client_payload.version }} Snapshot cleanup \`failed\`." --color "#DA2700"
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run ${{ github.event.client_payload.dry_run }} --message "🗑️ ${{ github.event.client_payload.version }} Snapshot cleanup \`failed\`." --color "#DA2700"
       - name: slack/notification-success
         if: ${{ success() }}
-        run: ${{ github.workspace }}/bin/slack  --verbose --message "❌ ${{ github.event.client_payload.version }} Snapshot cleanup \`successful\`." --color "#229954"
+        run: ${{ github.workspace }}/bin/slack  --verbose --denote-dry-run ${{ github.event.client_payload.dry_run }} --message "🗑️ ${{ github.event.client_payload.version }} Snapshot cleanup \`successful\`." --color "#229954"

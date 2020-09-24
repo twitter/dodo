@@ -3,7 +3,14 @@ name: release-snapshots
 # Publishes snapshot releases of twitter/util, twitter/scrooge, twitter/finagle, 
 # twitter/twitter-server, and twitter/finatra.
 # 
-# Runs on a cron trigger
+# Runs on a cron trigger or manually via a repository dispatch event:
+# 
+# {
+#  "event_type": "release-snapshots",
+#  "client_payload": {
+#    "dry_run": true
+#  }
+# }
 #
 env:
   JAVA_OPTS: "-Dsbt.log.noformat=true"
@@ -130,7 +137,7 @@ jobs:
         working-directory: ${{ github.workspace }}/finatra
       - name: slack/notification-failure
         if: ${{ cancelled() || failure() }}
-        run: ${{ github.workspace }}/bin/slack --verbose --message "📸 Snapshot publishing \`failed\`." --color "#DA2700"
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run $DRY_RUN --message "📸 Snapshot publishing \`failed\`." --color "#DA2700"
       - name: slack/notification-success
         if: ${{ success() }}
-        run: ${{ github.workspace }}/bin/slack  --verbose --message "📸 Snapshot publishing \`successful\`." --color "#229954"
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run $DRY_RUN --message "📸 Snapshot publishing \`successful\`." --color "#229954"

@@ -225,3 +225,9 @@ jobs:
         run: |
           git push $REMOTE_BASE/finatra.git HEAD
         working-directory: ${{ github.workspace }}/finatra-gh-pages
+      - name: slack/notification-failure
+        if: ${{ cancelled() || failure() }}
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run ${{ github.event.client_payload.dry_run }} --message "📓 ${{ github.event.client_payload.version }} Site publish \`failed\`." --color "#DA2700"
+      - name: slack/notification-success
+        if: ${{ success() }}
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run ${{ github.event.client_payload.dry_run }} --message "📓 ${{ github.event.client_payload.version }} Site publish \`successful\`." --color "#229954"

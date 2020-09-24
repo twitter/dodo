@@ -84,19 +84,19 @@ jobs:
       - name: release/scrooge
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-sbt-plugin
       - name: release/scrooge-sbt-plugin
         if: ${{ success() && github.event.client_payload.scrooge_sbt_plugin }}
         run: |
-          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-sbt-plugin
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-sbt-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # scrooge-maven-plugin
       - name: release/scrooge-maven-plugin
         if: ${{ success() && github.event.client_payload.scrooge_maven_plugin }}
         run: |
-          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-maven-plugin
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose scrooge-maven-plugin
         working-directory: ${{ github.workspace }}/scrooge
       # checkout finagle and release
       - name: checkout/finagle
@@ -110,7 +110,7 @@ jobs:
       - name: release/finagle
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose finagle
         working-directory: ${{ github.workspace }}/finagle
       # checkout twitter-server and release
       - name: checkout/twitter-server
@@ -124,7 +124,7 @@ jobs:
       - name: release/twitter-server
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose twitter-server
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose twitter-server
         working-directory: ${{ github.workspace }}/twitter-server
       # checkout finatra and release
       - name: checkout/finatra
@@ -138,11 +138,11 @@ jobs:
       - name: release/finatra
         if: ${{ success() }}
         run: |
-          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }}  --dry-run ${{ github.event.client_payload.dry_run }} --verbose finatra
+          ${{ github.workspace }}/bin/publish --phab-id ${{ github.event.client_payload.phab_id }} --version ${{ github.event.client_payload.version }} --dry-run ${{ github.event.client_payload.dry_run }} --verbose finatra
         working-directory: ${{ github.workspace }}/finatra
       - name: slack/notification-failure
         if: ${{ cancelled() || failure() }}
-        run: ${{ github.workspace }}/bin/slack --verbose --message "🐣 Versioned release \`failed\`." --color "#DA2700"
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run ${{ github.event.client_payload.dry_run }} --message "🐣 Versioned release \`failed\`." --color "#DA2700"
       - name: slack/notification-success
         if: ${{ success() }}
-        run: ${{ github.workspace }}/bin/slack  --verbose --message "🐣 Versioned release \`successful\`." --color "#229954"
+        run: ${{ github.workspace }}/bin/slack --verbose --denote-dry-run ${{ github.event.client_payload.dry_run }} --message "🐣 Versioned release \`successful\`." --color "#229954"

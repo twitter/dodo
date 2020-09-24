@@ -19,6 +19,7 @@ WORKSPACE=${GITHUB_WORKSPACE:-.}
 IS_CI=${CI:-false}
 
 # Initialize defaults
+is_dry_run=false      # If the action was a dry run.
 message=""            # Message to send.
 color="#000000"       # Attachment side-bar color. Default: #000000 (black).
 
@@ -26,6 +27,7 @@ function print_usage {
     echo "USAGE: $0 --success true --verbose"
     echo "Options:
   --message        The message to post. Default empty.
+  --denote-dry-run If the action was a dry run. Default false.
   --color          Hex code for attachment side-base color. Default: #000000 (black).
   --verbose        Run in verbose mode. Default: false.
   --help           Print usage."
@@ -35,7 +37,11 @@ function print_usage {
 # todo: parameterize the title as well to make this generically useful
 function post() {
   FORMATTED=$(date +%s)
-  local data="{\"attachments\": [{\"blocks\": [], \"mrkdwn_in\": [\"text\" ], \"color\": \"$color\", \"author_name\": \"twitter/dodo\", \"author_link\": \"https://github.com/twitter/dodo\", \"author_icon\": \"https://www.pngfind.com/pngs/m/597-5971921_dodo-flightless-bird-extinction-ark-dodo-bird-no.png\", \"title\": \"Workflow: ${GITHUB_WORKFLOW}/${GITHUB_ACTION} [${GITHUB_RUN_ID}/${GITHUB_RUN_NUMBER}]\", \"title_link\": \"https://github.com/twitter/dodo/actions?query=workflow%3A${GITHUB_WORKFLOW}\", \"text\": \"$message\", \"footer\": \"twitter/dodo\", \"footer_icon\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\", \"ts\": $FORMATTED}]}"
+  local dryRunText=""
+  if [[ "$is_dry_run" == true ]]; then
+    dryRunText=" [DRY RUN]"
+  fi
+  local data="{\"attachments\": [{\"blocks\": [], \"mrkdwn_in\": [\"text\" ], \"color\": \"$color\", \"author_name\": \"twitter/dodo\", \"author_link\": \"https://github.com/twitter/dodo\", \"author_icon\": \"https://www.pngfind.com/pngs/m/597-5971921_dodo-flightless-bird-extinction-ark-dodo-bird-no.png\", \"title\": \"Workflow: ${GITHUB_WORKFLOW}/${GITHUB_ACTION} [${GITHUB_RUN_ID}/${GITHUB_RUN_NUMBER}]${dryRunText}\", \"title_link\": \"https://github.com/twitter/dodo/actions?query=workflow%3A${GITHUB_WORKFLOW}\", \"text\": \"$message\", \"footer\": \"twitter/dodo\", \"footer_icon\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\", \"ts\": $FORMATTED}]}"
 
   local slack_curl_cmd="curl -sD - -o /dev/null -X POST -H \"Content-Type: application/json\" -d '$data' \"$SLACK_URL\""
   log "info" "$slack_curl_cmd"
@@ -61,6 +67,7 @@ function echo_set_options {
         log "debug" "  CI        = $IS_CI"
         log "debug" ""
         log "debug" "--- options ---"
+        log "debug" "  dry-run   = $is_dry_run"
         log "debug" "  message   = $message"
         log "debug" "  color     = $color"
         log "debug" ""
@@ -75,6 +82,7 @@ shift_count="0"
 for arg in "$@"; do
   shift
   case "$arg" in
+    "--denote-dry-run") is_dry_run=$1; ((shift_count+=1)) ;;
     "--message")        message=$1; ((shift_count+=1)) ;;
     "--color")          color=$1; ((shift_count+=1)) ;;
     "--verbose")        verbose=true ;;
