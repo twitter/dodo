@@ -11,7 +11,7 @@ set -euo pipefail
 #
 # See: print_usage function for usage.
 #######################################################################
-VERSION="20.9.0"
+VERSION="20.10.0"
 NAME="Dodo Build"
 
 UTIL_COMMANDS="./sbt +test:compile +publishLocal;./sbt ++2.11.12 util-intellij/publishLocal"
