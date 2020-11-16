@@ -43,18 +43,18 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - uses: actions/checkout@v2.1.1
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - uses: olafurpg/setup-scala@v7
+      - uses: olafurpg/setup-scala@v10
         with:
           java-version: openjdk@1.8
-      - uses: olafurpg/setup-gpg@v2
+      - uses: olafurpg/setup-gpg@v3
       - name: setup/gpg
         run: ${{ github.workspace }}/bin/gpg-init
       - name: setup/maven
-        uses: whelk-io/maven-settings-xml-action@v4
+        uses: whelk-io/maven-settings-xml-action@v14
         with:
           servers: '[{ "id": "sonatype-nexus-staging", "username": "${{ secrets.SONATYPE_USERNAME }}", "password": "${{ secrets.SONATYPE_PASSWORD }}" }]'
       - name: setup/sbt
@@ -62,7 +62,7 @@ jobs:
           cp -r ${{ github.workspace }}/bin/.sbt ~/.sbt
       # checkout util and release
       - name: checkout/util
-        uses: actions/checkout@v2.1.1
+        uses: actions/checkout@v2.3.4
         with:
           repository: twitter/util
           token: ${{ secrets.API_KEY }}
@@ -75,7 +75,7 @@ jobs:
       # checkout scrooge and release
       - name: checkout/scrooge
         if: ${{ success() }}
-        uses: actions/checkout@v2.1.1
+        uses: actions/checkout@v2.3.4
         with:
           repository: twitter/scrooge
           token: ${{ secrets.API_KEY }}
@@ -101,7 +101,7 @@ jobs:
       # checkout finagle and release
       - name: checkout/finagle
         if: ${{ success() }}
-        uses: actions/checkout@v2.1.1
+        uses: actions/checkout@v2.3.4
         with:
           repository: twitter/finagle
           token: ${{ secrets.API_KEY }}
@@ -115,7 +115,7 @@ jobs:
       # checkout twitter-server and release
       - name: checkout/twitter-server
         if: ${{ success() }}
-        uses: actions/checkout@v2.1.1
+        uses: actions/checkout@v2.3.4
         with:
           repository: twitter/twitter-server
           token: ${{ secrets.API_KEY }}
@@ -129,7 +129,7 @@ jobs:
       # checkout finatra and release
       - name: checkout/finatra
         if: ${{ success() }}
-        uses: actions/checkout@v2.1.1
+        uses: actions/checkout@v2.3.4
         with:
           repository: twitter/finatra
           token: ${{ secrets.API_KEY }}
