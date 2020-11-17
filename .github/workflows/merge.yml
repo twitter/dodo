@@ -19,6 +19,6 @@ jobs:
       - name: merge
         run: |
           develop_head=$(git rev-parse HEAD)
+          git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git checkout release && git merge "$develop_head" && git push -f origin release
-
