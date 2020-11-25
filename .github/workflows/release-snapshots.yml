@@ -1,10 +1,10 @@
 name: release-snapshots
 
-# Publishes snapshot releases of twitter/util, twitter/scrooge, twitter/finagle, 
+# Publishes snapshot releases of twitter/util, twitter/scrooge, twitter/finagle,
 # twitter/twitter-server, and twitter/finatra.
-# 
+#
 # Runs on a cron trigger or manually via a repository dispatch event:
-# 
+#
 # {
 #  "event_type": "release-snapshots",
 #  "client_payload": {
@@ -46,7 +46,7 @@ jobs:
           java-version: 1.8
       - uses: olafurpg/setup-scala@v10
         with:
-          java-version: openjdk@1.8
+          java-version: adoptjdk@1.8
       - uses: olafurpg/setup-gpg@v3
       - name: setup/gpg
         run: ${{ github.workspace }}/bin/gpg-init
