@@ -1,6 +1,6 @@
 ## Dodo
 
-[![Build Status](https://secure.travis-ci.org/twitter/dodo.png?branch=develop)](http://travis-ci.org/twitter/dodo?branch=develop)
+[![Build Status](https://secure.travis-ci.com/twitter/dodo.png?branch=develop)](https://travis-ci.com/twitter/dodo?branch=develop)
 [![Project status](https://img.shields.io/badge/status-active-brightgreen.svg)](#status)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/twitter/finagle)
 
@@ -91,4 +91,4 @@ To clean up this state, simply delete these directories or include the `--clean-
 [finagle]: https://github.com/twitter/finagle
 [twitter-server]: https://github.com/twitter/twitter-server
 [finatra]: https://github.com/twitter/finatra
-[sbt]: http://www.scala-sbt.org/
+[sbt]: https://www.scala-sbt.org/

@@ -103,7 +103,7 @@ metadata will be preserved.
 We also welcome improvements to the Dodo documentation.
 
 [pull-example]: https://github.com/twitter/finagle/pull/267
-[travis-ci]: https://travis-ci.org/twitter/dodo
+[travis-ci]: https://travis-ci.com/twitter/dodo
 
 ### License
 By contributing your code, you agree to license your contribution under the terms of the APLv2:
