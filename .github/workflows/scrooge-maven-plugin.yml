@@ -73,7 +73,7 @@ jobs:
         working-directory: ${{ github.workspace }}/finagle
       # run dodo to build scrooge dependencies
       - name: dodo/build
-        uses: cacoco/dodo-build@v2
+        uses: twitter/dodo-build@v2
         with:
           branch: release
           project: scrooge
