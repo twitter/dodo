@@ -86,6 +86,12 @@ $ ~/.dodo/clones
 
 To clean up this state, simply delete these directories or include the `--clean-files` option. Note, the `~/.dodo/clones` directory contains all previously cloned repositories.
 
+## License
+
+Copyright 2016-2021 Twitter, Inc.
+
+Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+
 [util]: https://github.com/twitter/util
 [scrooge]: https://github.com/twitter/scrooge
 [finagle]: https://github.com/twitter/finagle
