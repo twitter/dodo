@@ -83,7 +83,7 @@ jobs:
         working-directory: ${{ github.workspace }}/finagle
       # run dodo to build twitter-server dependencies
       - name: dodo/build
-        uses: cacoco/dodo-build@v2
+        uses: twitter/dodo-build@v3
         with:
           branch: release
           project: twitter-server

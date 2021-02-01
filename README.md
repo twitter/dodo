@@ -88,7 +88,7 @@ To clean up this state, simply delete these directories or include the `--clean-
 
 ## License
 
-Copyright 2016-2021 Twitter, Inc.
+Copyright 2016 Twitter, Inc.
 
 Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
 
