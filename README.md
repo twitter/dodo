@@ -1,6 +1,6 @@
 ## Dodo
 
-[![Build Status](https://secure.travis-ci.com/twitter/dodo.png?branch=develop)](https://travis-ci.com/twitter/dodo?branch=develop)
+[![Build Status](https://github.com/twitter/dodo/workflows/continuous%20integration/badge.svg?branch=develop)](https://github.com/twitter/dodo/workflows/continuous%20integration/badge.svg?branch=develop)
 [![Project status](https://img.shields.io/badge/status-active-brightgreen.svg)](#status)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/twitter/finagle)
 
