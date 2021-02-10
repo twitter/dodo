@@ -1,5 +1,7 @@
 name: merge-release
 
+env:
+  API_USER: ${{ secrets.API_USER }}
 # Merges the 'develop' branch into release on pushes to 'develop'
 defaults:
   run:
@@ -16,9 +18,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: develop
+      - name: setup/git
+        run: |
+          git config --global user.email "${API_USER}@twitter.com"
+          git config --global user.name "$API_USER"
+          git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
       - name: merge
         run: |
           develop_head=$(git rev-parse HEAD)
-          git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
           git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
           git checkout release && git merge "$develop_head" && git push -f origin release
