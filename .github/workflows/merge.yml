@@ -1,5 +1,7 @@
 name: merge-release
 
+env:
+  API_USER: ${{ secrets.API_USER }}
 # Merges the 'develop' branch into release on pushes to 'develop'
 defaults:
   run:
