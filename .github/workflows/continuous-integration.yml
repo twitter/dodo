@@ -3,7 +3,6 @@ name: continuous integration
 env:
   JAVA_OPTS: "-Dsbt.log.noformat=true"
   TRAVIS: "true" # pretend we're TravisCI
-  UPLOAD_COVERAGE: false
 
 defaults:
   run:
