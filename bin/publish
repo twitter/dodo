@@ -17,7 +17,6 @@ NAME="Dodo Publish"
 
 # Util publishes two projects independently
 UTIL_COMMANDS="./sbt +publishLocal +publishLocalSigned +publishSigned +publishM2;"
-UTIL_COMMANDS="${UTIL_COMMANDS}./sbt \"project util-intellij\" +publishSigned"
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 

@@ -14,7 +14,7 @@ set -euo pipefail
 VERSION="21.2.0"
 NAME="Dodo Build"
 
-UTIL_COMMANDS="./sbt +test:compile +publishLocal;./sbt ++2.11.12 util-intellij/publishLocal"
+UTIL_COMMANDS="./sbt +test:compile +publishLocal"
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
