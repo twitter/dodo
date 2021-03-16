@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. Note that `
 
 ## [Unreleased]
 
+### Runtime Behavior Changes
+* dodo - Bump scala version to 2.12.13 ``PHAB_ID=D632567``
+
 ### Added 
 * dodo - Add initial support for JDK 11 compatibility. 
   Update SBT and Scala versions to be JDK 11 compatible

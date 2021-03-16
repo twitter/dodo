@@ -39,7 +39,7 @@ The above command will clone all necessary Github Twitter OSS repos for building
 If you want to pass an option that take a value, e.g., `--sbt-version`, use a space. E.g.,
 
 ```bash
-$ ./dodo/bin/build --no-test --scala-version 2.12.11 finagle
+$ ./dodo/bin/build --no-test --scala-version 2.12.13 finagle
 ```
 
 Builder options:
