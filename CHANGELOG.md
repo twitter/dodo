@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. Note that `
 ## [Unreleased]
 
 ### Runtime Behavior Changes
+
+* dodo - Revert to scala version 2.12.12 due to https://github.com/scoverage/sbt-scoverage/issues/319
+  ``PHAB_ID=D635917``
+
 * dodo - Bump scala version to 2.12.13 ``PHAB_ID=D632567``
 
 ### Added 

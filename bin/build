@@ -446,7 +446,7 @@ function set_up {
 }
 
 function print_usage {
-    echo "USAGE: $0 --local --no-test --include --scala-version 2.12.13 <project>"
+    echo "USAGE: $0 --local --no-test --include --scala-version 2.12.12 <project>"
     echo "Options:
   --all             Build all projects in the DAG list (overrides --include). Default: false.
   --clean           Delete any sbt-launch.jar and run \"sbt clean\" before running other sbt commands.
