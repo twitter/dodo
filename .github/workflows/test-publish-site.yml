@@ -1,0 +1,109 @@
+name: Test Site Publish
+
+env:
+  JAVA_OPTS: "-Dsbt.log.noformat=true"
+  API_USER: ${{ secrets.API_USER }}
+  API_KEY: ${{ secrets.API_KEY }}
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+  SCALA_VERSION: "2.12"
+  REMOTE_BASE: "https://${API_USER}:${API_KEY}@github.com/twitter"
+defaults:
+  run:
+    shell: bash --noprofile --norc -eux -o pipefail {0}
+
+on:
+  pull_request:
+
+jobs:
+  publish-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dump/context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - uses: actions/checkout@v2.3.4
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: adopt@1.8
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: setup/sphinx
+        run: |
+          sudo apt-get install python3-sphinx
+      - name: setup/git
+        run: |
+          git config --global user.email "${API_USER}@twitter.com"
+          git config --global user.name "$API_USER"
+      
+      # publish util site
+      - name: checkout/util
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: twitter/util
+          token: ${{ secrets.API_KEY }}
+          ref: develop
+          path: util
+      - name: generate/util
+        run: |
+          ./sbt --warn util-doc/makeSite
+          ./sbt --warn unidoc
+        working-directory: ${{ github.workspace }}/util
+
+      # publish scrooge site
+      - name: checkout/scrooge
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: twitter/scrooge
+          token: ${{ secrets.API_KEY }}
+          ref: develop
+          path: scrooge
+      - name: generate/scrooge
+        run: |
+          ./sbt --warn scrooge-doc/makeSite
+        working-directory: ${{ github.workspace }}/scrooge
+
+      # publish finagle site
+      - name: checkout/finagle
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: twitter/finagle
+          token: ${{ secrets.API_KEY }}
+          ref: develop
+          path: finagle
+      - name: generate/finagle
+        run: |
+          ./sbt --warn finagle-doc/makeSite
+          ./sbt --warn unidoc
+        working-directory: ${{ github.workspace }}/finagle
+
+      # publish twitter-server site
+      - name: checkout/twitter-server
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: twitter/twitter-server
+          token: ${{ secrets.API_KEY }}
+          ref: develop
+          path: twitter-server
+      - name: generate/twitter-server
+        run: |
+          ./sbt --warn twitterServerDoc/makeSite
+        working-directory: ${{ github.workspace }}/twitter-server
+
+      # publish finatra site
+      - name: checkout/finatra
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: twitter/finatra
+          token: ${{ secrets.API_KEY }}
+          ref: develop
+          path: finatra
+      - name: generate/finatra
+        run: |
+          ./sbt --warn site/makeSite
+          ./sbt --warn unidoc
+        working-directory: ${{ github.workspace }}/finatra
