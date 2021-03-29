@@ -11,7 +11,7 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functi
 #
 # See: print_usage function for usage.
 #######################################################################
-VERSION="21.2.0"
+VERSION="21.3.0"
 NAME="Dodo Merge Branch"
 
 WORKSPACE=${GITHUB_WORKSPACE:-.}
