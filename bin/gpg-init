@@ -10,7 +10,7 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functi
 #
 # Does not take arguments.
 #######################################################################
-VERSION="21.2.0"
+VERSION="21.3.0"
 NAME="Dodo GPG Init"
 
 # BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
