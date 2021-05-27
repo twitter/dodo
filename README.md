@@ -1,6 +1,6 @@
 ## Dodo
 
-[![Build Status](https://github.com/twitter/dodo/workflows/continuous%20integration/badge.svg?branch=develop)](https://github.com/twitter/dodo/actions?query=workflow%3A%22continuous+integration%22+branch%3Adevelop)
+[![Build Status](https://github.com/twitter/dodo/workflows/continuous%20integration/badge.svg?branch=release)](https://github.com/twitter/dodo/actions?query=workflow%3A%22continuous+integration%22+branch%3Arelease)
 [![Project status](https://img.shields.io/badge/status-active-brightgreen.svg)](#status)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/twitter/finagle)
 
