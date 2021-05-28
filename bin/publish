@@ -31,8 +31,8 @@ SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.
 declare "scrooge_name=scrooge"
 declare "scrooge_commands=$SCROOGE_COMMANDS"
 # publish scrooge-sbt-plugin
-SCROOGE_SBT_PLUGIN_COMMANDS="./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 +publishLocalSigned +publishSigned;"
-SCROOGE_SBT_PLUGIN_COMMANDS="${SCROOGE_SBT_PLUGIN_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 +publishLocalSigned +publishSigned;"
+SCROOGE_SBT_PLUGIN_COMMANDS="./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 +publishLocal +publishSigned;"
+SCROOGE_SBT_PLUGIN_COMMANDS="${SCROOGE_SBT_PLUGIN_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 +publishLocal +publishSigned;"
 declare "scroogesbtplugin_name=scrooge-sbt-plugin"
 declare "scroogesbtplugin_commands=$SCROOGE_SBT_PLUGIN_COMMANDS"
 # publish scrooge-maven-plugin
