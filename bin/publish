@@ -27,7 +27,8 @@ SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-core\" +publishLoca
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^0.13.18 publishLocalSigned;"
-SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocalSigned;"
+# our projects use the scrooge-sbt-plugin with sbt 1.x so we also publish the plugin locally unsigned for usage in building
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocal publishLocalSigned;"
 declare "scrooge_name=scrooge"
 declare "scrooge_commands=$SCROOGE_COMMANDS"
 # publish scrooge-sbt-plugin
