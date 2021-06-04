@@ -18,7 +18,7 @@ UTIL_COMMANDS="./sbt +test:compile +publishLocal"
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
-SCROOGE_CORE_COMMANDS="./sbt +scrooge-generator/publishLocal;./sbt +scrooge-publish-local/publishLocal;./sbt ^^0.13.18 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ^^1.3.10 publishLocal"
+SCROOGE_CORE_COMMANDS="./sbt +scrooge-generator/publishLocal;./sbt +scrooge-publish-local/publishLocal;./sbt ++2.10.7 ^^0.13.18 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.5.3 publishLocal"
 declare "scroogecore_name=scrooge"
 declare "scroogecore_commands=$SCROOGE_CORE_COMMANDS"
 
@@ -368,12 +368,12 @@ function download_sbt_launch_jar {
         print_usage >&2
         exit 1
     fi
-    local url="$proxy_url/org/scala-sbt/sbt-launch/${sbt_version}/sbt-launch.jar"
+    local url="$proxy_url/org/scala-sbt/sbt-launch/${sbt_version}/sbt-launch-${sbt_version}.jar"
     log "info" " "
     log "info" "------------------------------------------------------------------------"
     log "info" "Downloading sbt-launch.jar from proxy location: $url"
-    wget $url
-    sbt_jar=$(pwd)/sbt-launch.jar
+    wget -O "sbt-launch.jar" "$url"
+    sbt_jar="$(pwd)/sbt-launch.jar"
     ls -l "$sbt_jar"
     log "info" "Completed download of sbt-launch.jar from proxy location."
     log "info" "------------------------------------------------------------------------"
