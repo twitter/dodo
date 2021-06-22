@@ -17,7 +17,7 @@ env:
   API_USER: ${{ secrets.API_USER }}
   API_KEY: ${{ secrets.API_KEY }}
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-  SCALA_VERSION: "2.12"
+  SCALA_VERSION: "2.13"
   REMOTE_BASE: "https://${API_USER}:${API_KEY}@github.com/twitter"
 defaults:
   run:
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config --global user.email "${API_USER}@twitter.com"
           git config --global user.name "$API_USER"
-      
+
       # publish util site
       - name: checkout/util
         uses: actions/checkout@v2.3.4
