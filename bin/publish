@@ -12,7 +12,7 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functi
 # NOTE: this script is expected to be run in the directory of the
 # project being released.
 #######################################################################
-VERSION="21.7.0"
+VERSION="21.8.0"
 NAME="Dodo Publish"
 
 # Util publishes two projects independently
