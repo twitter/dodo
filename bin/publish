@@ -173,7 +173,7 @@ function release {
     log "info" "--- Running release commands ---"
     log "info" ""
     if [[ "$dry_run" = false ]]; then
-      git checkout release > /dev/null 2>&1; git pull > /dev/null 2>&1
+      git checkout release; git pull
     fi
     run_commands "$(array_get "${project//-/}" commands)"
 
