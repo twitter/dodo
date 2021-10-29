@@ -173,11 +173,8 @@ function release {
     log "info" "--- Running release commands ---"
     log "info" ""
     if [[ "$dry_run" = false ]]; then
-      if [[ "$IS_CI" = true ]]; then
-        git log -1 HEAD; git branch -v; fetch_branches
-      fi
-      git checkout release; git pull --ff
-    fi
+      git checkout release
+    fi 
     run_commands "$(array_get "${project//-/}" commands)"
 
     if [[ "$project" != "scrooge-sbt-plugin" ]] && [[ "$project" != "scrooge-maven-plugin" ]]; then
