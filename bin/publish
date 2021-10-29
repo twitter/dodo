@@ -176,7 +176,7 @@ function release {
       if [[ "$IS_CI" = true ]]; then
         fetch_branches
       fi
-      git checkout release; git pull --ff-only
+      git checkout release; git pull --ff
     fi
     run_commands "$(array_get "${project//-/}" commands)"
 
