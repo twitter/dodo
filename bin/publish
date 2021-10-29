@@ -174,7 +174,7 @@ function release {
     log "info" ""
     if [[ "$dry_run" = false ]]; then
       if [[ "$IS_CI" = true ]]; then
-        fetch_branches
+        git log -1 HEAD; git branch -v; fetch_branches
       fi
       git checkout release; git pull --ff
     fi
