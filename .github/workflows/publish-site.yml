@@ -46,6 +46,7 @@ jobs:
           python-version: 3.6
       - name: setup/sphinx
         run: |
+          sudo apt-get update
           sudo apt-get install python3-sphinx
       - name: setup/git
         run: |
