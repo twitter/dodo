@@ -13,7 +13,7 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/functi
 # NOTE: this script is expected to be run in the directory of the
 # project being released.
 #######################################################################
-VERSION="22.1.0"
+VERSION="22.2.0"
 NAME="Dodo Snapshot Cleanup"
 
 # Validation project list in roughly "reverse" order. Start at leaves and move inward.

@@ -4,7 +4,7 @@ set -euo pipefail
 #######################################################################
 # Helper functions for Dodo Build and Publish scripts
 #######################################################################
-VERSION="22.1.0"
+VERSION="22.2.0"
 NAME="Dodo Functions"
 
 # Constants
