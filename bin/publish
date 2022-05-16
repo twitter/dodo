@@ -22,7 +22,8 @@ declare "util_commands=$UTIL_COMMANDS"
 
 # Scrooge publishes it's projects independently for various reasons (including the sbt-plugin and maven-plugin).
 # sbt-plugin needs the generator in scala 2.10 and 2.12 and published to m2.
-SCROOGE_COMMANDS="./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
+SCROOGE_COMMANDS="./sbt \"project scrooge-scrooge-thriftValidation\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-core\" +publishLocal +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publishLocalSigned +publishSigned;"
