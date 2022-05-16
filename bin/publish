@@ -40,7 +40,7 @@ declare "scroogesbtplugin_commands=$SCROOGE_SBT_PLUGIN_COMMANDS"
 # publish scrooge-maven-plugin
 # We skip javadoc generation due to this issue:
 # https://issues.apache.org/jira/browse/MJAVADOC-382
-SCROOGE_MAVEN_PLUGIN_COMMANDS="cd scrooge-maven-plugin;mvn -e -Dmaven.javadoc.skip=true deploy -Pgithub;cd ..;"
+SCROOGE_MAVEN_PLUGIN_COMMANDS="cd scrooge-maven-plugin;mvn -X -Dmaven.javadoc.skip=true deploy -Pgithub;cd ..;"
 declare "scroogemavenplugin_name=scrooge-maven-plugin"
 declare "scroogemavenplugin_commands=$SCROOGE_MAVEN_PLUGIN_COMMANDS"
 
