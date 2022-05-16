@@ -25,6 +25,9 @@ defaults:
   run:
     shell: bash
 on:
+  push:
+    branches:
+      - ccoco/UpdatePublish
   repository_dispatch:
     types: [release-snapshots]
   schedule:
