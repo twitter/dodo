@@ -22,7 +22,8 @@ declare "util_commands=$UTIL_COMMANDS"
 
 # Scrooge publishes it's projects independently for various reasons (including the sbt-plugin and maven-plugin).
 # sbt-plugin needs the generator in scala 2.10 and 2.12 and published to m2.
-SCROOGE_COMMANDS="./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
+SCROOGE_COMMANDS="./sbt \"project scrooge-thriftValidation\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-generator\" +publishLocal +publishLocalSigned +publishM2 +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-core\" +publishLocal +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publishLocalSigned +publishSigned;"
@@ -39,7 +40,7 @@ declare "scroogesbtplugin_commands=$SCROOGE_SBT_PLUGIN_COMMANDS"
 # publish scrooge-maven-plugin
 # We skip javadoc generation due to this issue:
 # https://issues.apache.org/jira/browse/MJAVADOC-382
-SCROOGE_MAVEN_PLUGIN_COMMANDS="cd scrooge-maven-plugin;mvn -Dmaven.javadoc.skip=true deploy -Pgithub;cd ..;"
+SCROOGE_MAVEN_PLUGIN_COMMANDS="cd scrooge-maven-plugin;mvn -e -Dmaven.javadoc.skip=true deploy -Pgithub;cd ..;"
 declare "scroogemavenplugin_name=scrooge-maven-plugin"
 declare "scroogemavenplugin_commands=$SCROOGE_MAVEN_PLUGIN_COMMANDS"
 
@@ -70,6 +71,7 @@ snapshot=false          # Snapshot release. Default = false. Set to true for a s
 release_version=""      # Version to be released. While this will be parsed from build.sbt files, we need to perform some up-front validation as well.
 phab_id=""              # Differential ID to use as the criteria for finding the pre-release commit in the Github repository.
 dry_run=false           # Output but don't execute the release commands
+dry_run_input="false"
 verbose=false           # prints build configuration options and other verbose statements
 
 function print_usage {
