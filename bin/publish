@@ -29,12 +29,12 @@ SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-linter\" +publishLo
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-serializer\" +publishLocal +publishLocalSigned +publishSigned;"
 SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ++2.10.7 ^^0.13.18 publishLocalSigned;"
 # our projects use the scrooge-sbt-plugin with sbt 1.x so we also publish the plugin locally unsigned for usage in building
-SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.6.1 publishLocal publishLocalSigned;"
+SCROOGE_COMMANDS="${SCROOGE_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.7.1 publishLocal publishLocalSigned;"
 declare "scrooge_name=scrooge"
 declare "scrooge_commands=$SCROOGE_COMMANDS"
 # publish scrooge-sbt-plugin
 SCROOGE_SBT_PLUGIN_COMMANDS="./sbt \"project scrooge-sbt-plugin\" ++2.10.7 ^^0.13.18 publishSigned;"
-SCROOGE_SBT_PLUGIN_COMMANDS="${SCROOGE_SBT_PLUGIN_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.6.1 publishSigned;"
+SCROOGE_SBT_PLUGIN_COMMANDS="${SCROOGE_SBT_PLUGIN_COMMANDS}./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.7.1 publishSigned;"
 declare "scroogesbtplugin_name=scrooge-sbt-plugin"
 declare "scroogesbtplugin_commands=$SCROOGE_SBT_PLUGIN_COMMANDS"
 # publish scrooge-maven-plugin

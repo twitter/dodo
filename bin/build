@@ -18,7 +18,7 @@ UTIL_COMMANDS="./sbt +test:compile +publishLocal"
 declare "util_name=util"
 declare "util_commands=$UTIL_COMMANDS"
 
-SCROOGE_CORE_COMMANDS="./sbt +scrooge-generator/publishLocal;./sbt +scrooge-publish-local/publishLocal;./sbt ++2.10.7 ^^0.13.18 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.6.1 publishLocal"
+SCROOGE_CORE_COMMANDS="./sbt +scrooge-generator/publishLocal;./sbt +scrooge-publish-local/publishLocal;./sbt ++2.10.7 ^^0.13.18 scrooge-sbt-plugin/publishLocal;./sbt \"project scrooge-sbt-plugin\" ++2.12.12 ^^1.7.1 publishLocal"
 declare "scroogecore_name=scrooge"
 declare "scroogecore_commands=$SCROOGE_CORE_COMMANDS"
 
