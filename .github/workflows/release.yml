@@ -53,6 +53,8 @@ jobs:
       - uses: olafurpg/setup-gpg@v3
       - name: setup/gpg
         run: ${{ github.workspace }}/bin/gpg-init
+      - name: setup/gpg_tty
+        run:  GPG_TTY=$(tty); export GPG_TTY
       - name: setup/maven
         uses: whelk-io/maven-settings-xml-action@v14
         with:
