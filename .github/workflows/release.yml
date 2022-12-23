@@ -28,6 +28,7 @@ env:
   API_USER: ${{ secrets.API_USER }}
   API_KEY: ${{ secrets.API_KEY }}
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+  GPG_TTY: $(tty)
 defaults:
   run:
     shell: bash
@@ -53,8 +54,6 @@ jobs:
       - uses: olafurpg/setup-gpg@v3
       - name: setup/gpg
         run: ${{ github.workspace }}/bin/gpg-init
-      - name: setup/gpg_tty
-        run:  GPG_TTY=$(tty); export GPG_TTY
       - name: setup/maven
         uses: whelk-io/maven-settings-xml-action@v14
         with:
