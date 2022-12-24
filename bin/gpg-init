@@ -16,6 +16,7 @@ NAME="Dodo GPG Init"
 # BEGIN: EXECUTE BUILD ----------------------------------------------------------------------------------
 SECONDS=0
 
+gpg --version
 # DO NOT leak out the $PGP_SECRET in the output!
 printf -- "%s" "$PGP_SECRET" | gpg --import --no-tty --batch --yes
 printf "%s" "default-key $PGP_KEY" >  ~/.gnupg/gpg.conf

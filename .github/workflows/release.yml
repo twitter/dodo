@@ -28,7 +28,6 @@ env:
   API_USER: ${{ secrets.API_USER }}
   API_KEY: ${{ secrets.API_KEY }}
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-  GPG_TTY: $(tty)
 defaults:
   run:
     shell: bash
